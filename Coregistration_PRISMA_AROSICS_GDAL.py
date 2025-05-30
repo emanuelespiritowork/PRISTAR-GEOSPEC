@@ -24,7 +24,7 @@ path = r'\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250
 
 
 im_target = path+'\PRS_L2D_STD_20220530102847_20220530102851_0001_VNIR_SWIR.tif'
-im_reference    = path+'S2A_MSIL2A_20220531T101611_N0400_R065_T32SM_20220531T163910_mosaicked_B4_Rescaled0-1_clipped.tif'
+im_reference    = path+'\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif'
 
 
 # In[12]:
