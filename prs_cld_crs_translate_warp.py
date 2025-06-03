@@ -13,7 +13,6 @@ import pandas as pd
 import os
 import geopandas as gpd
 
-
 # In[5]:
 
 
