@@ -146,6 +146,6 @@ with rasterio.open(S2_path) as src:
     print("Transform (Affine):", src.transform)
     S2_data = src.read()
 
-output_warp = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld_warp.tif"
+output_warp = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld_crs.tif"
 gdal.Warp(output_warp, merged_prisma_cloud, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30) #prisma_dataset
 
