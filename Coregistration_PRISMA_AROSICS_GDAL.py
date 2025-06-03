@@ -17,14 +17,14 @@ import geopandas as gpd
 # In[5]:
 
 
-path = r'\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424'
+path = '//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/PRS_L1_STD_OFFL_20250424/'
 
 
 # In[6]:
 
 
-im_target = path+'\PRS_L2D_STD_20220530102847_20220530102851_0001_VNIR_SWIR.tif'
-im_reference    = path+'\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif'
+im_target = path+'prs_cld_warp.tif'
+im_reference = path+'S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif'
 
 
 # In[12]:
@@ -59,18 +59,18 @@ B12-2185.7 = B128-183.4
 
 CRL = COREG_LOCAL(im_reference,
                   im_target, 
-                  grid_res =   15, #distance of tie points within the generated dense grid
-                  window_size =(100,100),
-                  max_shift = 30,
-                  align_grids =False,
-                  match_gsd=False,
+                  grid_res = 10,
+                  window_size =(128,128),
+                  max_shift = 10,
+                  #align_grids =False,
+                  #match_gsd=False,
                   resamp_alg_deshift = 'nearest',
                   resamp_alg_calc = 'nearest',
                   path_out = path+'Registered_AROSICS_Local_B4_B33.tif',
                   fmt_out = 'GTIFF',
-                  max_iter = 15,
-                  r_b4match = 1, #usiamo la banda 15 come riferimento dato che le prime bande hanno qualche artefatto
-                  s_b4match = 33)
+                  max_iter = 8,
+                  #r_b4match = 1,
+                  s_b4match = 51)
 
 
 # In[8]:
@@ -101,7 +101,7 @@ points
 # In[9]:
 
 
-CRL.tiepoint_grid.to_PointShapefile(path_out=path+'AROSICS_TiePoints_Local_B3_B33.shp')
+CRL.tiepoint_grid.to_PointShapefile(path_out=path+'AROSICS_TiePoints_Local_B8_B52.shp')
 
 
 # In[ ]:
@@ -121,7 +121,7 @@ CRL.tiepoint_grid.to_PointShapefile(path_out=path+'AROSICS_TiePoints_Local_B3_B3
 # In[ ]:
 
 
-path = 'D:\\Documenti\\CNR-IBE\\Dati\\PRISMA_pansharpening_project\\GROSSETO\\AROSICS_output\\20200801\\'
+#path = 'D:\\Documenti\\CNR-IBE\\Dati\\PRISMA_pansharpening_project\\GROSSETO\\AROSICS_output\\20200801\\'
 
 
 # In[ ]:

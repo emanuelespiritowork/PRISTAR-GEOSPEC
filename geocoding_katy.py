@@ -31,10 +31,10 @@ from geoarray import GeoArray
 import spectral
 from arosics import COREG_LOCAL
 from rasterio.warp import calculate_default_transform, reproject, Resampling
-os.chdir("Z:/Progetto_PRISMA/PRISMA_code")
+os.chdir("C:/Users/Katayoun/OneDrive/Desktop")
 
 #prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\Braccagni\2023\L1\PRS_L1_STD_OFFL_20231004101115_20231004101119_0001_HCO_FULL.tif"
-prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\PRS_L1_STD_OFFL_20250424100426_20250424100430_0001_HCO_FULL.tif"
+prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20240928\PRS_L1_STD_OFFL_20240928101742_20240928101746_0001_HCO_FULL.tif"
 prisma_dataset = gdal.Open(prisma_path, gdal.GA_ReadOnly) #Read
 prisma_arr = prisma_dataset.ReadAsArray
 prisma_prj = prisma_dataset.GetProjection()
@@ -53,7 +53,7 @@ plt.title('prisma')
 plt.show()
 print("shape:", prisma_arr.shape)
 
-cloud = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\PRS_L1_STD_OFFL_20250424100426_20250424100430_0001_HCO_CLD.tif"
+cloud = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20240928\PRS_L1_STD_OFFL_20240928101742_20240928101746_0001_HCO_CLD.tif"
 clouds = gdal.Open(cloud, gdal.GA_ReadOnly)
 data_cloud = clouds.ReadAsArray()
 #data_cloud[data_cloud == -999] = np.nan
@@ -90,7 +90,7 @@ metadata = {
 eroded_cld[:, 0] = 1   # Set 1 in the first column for all bands
 eroded_cld[:, -1] = 1  # Set 1 in the last column for all bands
 
-output_file = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\cloud.tif"
+output_file = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20240928\cloud.tif"
 with rasterio.open(output_file, 'w', **metadata) as dst:
     dst.write(eroded_cld, 1)
 
@@ -101,7 +101,7 @@ merged_prisma_cld = np.concatenate((prisma_arr, cloud_3d), axis=2)
 #combined_arr = np.dstack((prisma_arr, cloud_3d))
 #merged_prisma_cld[merged_prisma_cld == -999] = np.nan
 
-output_geotiff_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld.tif"
+output_geotiff_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20241113\prs_cld.tif"
 crs = prs.crs.to_wkt()
 # Create a rasterio Profile
 profile = {
@@ -121,7 +121,7 @@ with rasterio.open(output_geotiff_path, 'w', **profile) as dst:
 
 print("GeoTIFF file has been created:", output_geotiff_path)
 
-merged_prisma_cloud_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld.tif"
+merged_prisma_cloud_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20240928\prs_cld.tif"
 merged_prisma_cloud = gdal.Open(merged_prisma_cloud_path, gdal.GA_ReadOnly)
 merged_prisma_cloud_ar = merged_prisma_cloud.ReadAsArray
 merged_prisma_cloud_prj = merged_prisma_cloud.GetProjection()
@@ -134,7 +134,7 @@ with rasterio.open(merged_prisma_cloud_path) as mrg:
     merged_prisma_cloud_ar = mrg.read()
 merged_prisma_cloud_ar = np.transpose(merged_prisma_cloud_ar, (1, 2, 0))
 
-S2_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif"
+S2_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20240928\S2_20240929_10m_B08.tif"
 S2_dataset = gdal.Open(S2_path, gdal.GA_ReadOnly)
 S2_data = S2_dataset.ReadAsArray
 S2_prj = S2_dataset.GetProjection()
@@ -146,6 +146,95 @@ with rasterio.open(S2_path) as src:
     print("Transform (Affine):", src.transform)
     S2_data = src.read()
 
-output_warp = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld_warp.tif"
+output_warp = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20241113\prs_cld_warp.tif"
 gdal.Warp(output_warp, merged_prisma_cloud, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30) #prisma_dataset
+
+
+# S2_data_SR = (S2_data + (-1000)) / 10000
+#
+# metadata = {
+#     'driver': 'GTiff',
+#     'count': 1,
+#     'dtype': 'float32',
+#     'width': src.width,
+#     'height': src.height,
+#     'crs': src.crs,
+#     'transform': src.transform
+# }
+#
+# output_file = "//10.0.1.252/projects/2022_ASI-SCIA/5_SHARED/Torgnon_Strisciata_Mar2024/PlateauRosa/S2_20240129_B08_10m.tif"
+# # Write processed data to GeoTIFF file
+# with rasterio.open(output_file, 'w', **metadata) as dst:
+#     for band_idx in range(S2_data_SR.shape[0]):
+#         dst.write(S2_data_SR[band_idx, :, :], band_idx + 1)  # Write each band individually
+#
+#
+# src_nodata = 0.0
+# dst_nodata = -999
+# prisma_path = "//10.0.1.252/projects/2022_ASI-SCIA/5_SHARED/Torgnon_Strisciata_Mar2024/PlateauRosa/prisma_cld_merged.tif"
+# prisma_dataset = gdal.Open(prisma_path, gdal.GA_ReadOnly)
+# prisma_arr = prisma_dataset.ReadAsArray
+# prisma_prj = prisma_dataset.GetProjection()
+# with rasterio.open(prisma_path) as prs:
+#     print("Number of bands:", prs.count)
+#     print("Width:", prs.width)
+#     print("Height:", prs.height)
+#     print("CRS:", prs.crs)
+#     print("Transform (Affine):", prs.transform)
+#     prisma_arr = prs.read()
+# prisma_arr = np.transpose(prisma_arr, (1, 2, 0))
+# plt.imshow(prisma_arr[:, :, 1])
+# plt.title('prisma')
+# plt.show()
+# output_warp = "C:/Users/Katayoun/OneDrive/Desktop/prisma_warped.tif"
+# gdal.Warp(output_warp, prisma_dataset, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30)
+
+#merged_prisma_cloud
+output_warp = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\Lodi\PRS_L1_STD_OFFL_20200419103351_20200419103355_0001\prs_warp.tif"
+gdal.Warp(output_warp, merged_prisma_cloud, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30) #prisma_dataset
+
+x = merged_prisma_cloud_ar - merged_prisma_cld
+print(np.unique(x))
+
+im_tar = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2024\L1\PRS_L1_STD_OFFL_20241113\prs_cld_warp.tif"
+im_ref = S2_path
+data_s2 = gdal.Open(im_ref, gdal.GA_ReadOnly)
+S2_prj = data_s2.GetProjection()
+data_prs = gdal.Open(im_tar, gdal.GA_ReadOnly)
+prs_prj = data_prs.GetProjection()
+
+def main():
+
+    kwargs = {
+        'grid_res': 10,
+        'window_size': (128, 128),#(256, 256), #(128, 128),
+        'path_out': 'C:/Users/Katayoun/OneDrive/Desktop/',
+        'fmt_out': 'GTIFF',
+        'max_iter': 8,
+        'projectDir': 'coreg',
+        'max_shift': 10,
+        'resamp_alg_deshift': 'nearest',
+        's_b4match': 51,
+        'q': False,
+    }
+
+      # 'resamp_alg_calc': 'nearest',
+      # 'tieP_filter_level': 2,
+
+
+    CRL = COREG_LOCAL(im_ref, im_tar, **kwargs)
+    corr = CRL.correct_shifts()
+    CRL.view_CoRegPoints(figsize=(15, 15), shapes2plot='points', backgroundIm='tgt', savefigPath='C:/Users/Katayoun/OneDrive/Desktop/plot1.png') #hide_filtered=False, exclude_fillVals=False
+    CRL.view_CoRegPoints(figsize=(15, 15), attribute2plot='ABS_SHIFT', exclude_fillVals=False, hide_filtered=False, savefigPath='C:/Users/Katayoun/OneDrive/Desktop/plot11.png')
+
+    #CRL.view_CoRegPoints(figsize=(15, 15), attribute2plot='ABS_SHIFT', exclude_fillVals=False, hide_filtered=False)
+    CRL_after_corr = COREG_LOCAL(im_ref, CRL.path_out, **kwargs)
+    CRL_after_corr.view_CoRegPoints(figsize=(15, 15), shapes2plot='points', backgroundIm='tgt', savefigPath='C:/Users/Katayoun/OneDrive/Desktop/plot2.png')
+    CRL_after_corr.view_CoRegPoints(figsize=(15, 15), shapes2plot='points', backgroundIm='tgt', hide_filtered=False, savefigPath='C:/Users/Katayoun/OneDrive/Desktop/plot22.png')
+
+    CRL.CoRegPoints_table
+    CRL.tiepoint_grid.to_PointShapefile(path_out='C:/Users/Katayoun/OneDrive/Desktop/tie_10.shp')
+
+if __name__ == '__main__':
+    main()
 
