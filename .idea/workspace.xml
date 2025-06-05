@@ -32,7 +32,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code&quot;,
+    &quot;last_opened_file_path&quot;: &quot;//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/PRS_L2C_STD_20230304&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -43,6 +43,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2023\L2C\PRS_L2C_STD_20230304" />
       <recent name="Z:\Progetto_PRISMA\PRISMA_code" />
     </key>
   </component>
@@ -67,6 +68,8 @@
       <workItem from="1748608595861" duration="5899000" />
       <workItem from="1748944127632" duration="9228000" />
       <workItem from="1749027746377" duration="5522000" />
+      <workItem from="1749042634729" duration="635000" />
+      <workItem from="1749109097931" duration="16906000" />
     </task>
     <servers />
   </component>

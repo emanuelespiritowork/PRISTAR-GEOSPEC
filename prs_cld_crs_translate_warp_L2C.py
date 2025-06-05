@@ -16,14 +16,14 @@ import geopandas as gpd
 # In[5]:
 
 
-path = '//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/PRS_L2C_STD_20230304/'
+path = '//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/PRS_L2C_STD_20230407/'
 
 
 # In[6]:
 
 
-im_target = path+'PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_FULL.tif'
-im_reference = path+'S2_20230309_B08_T32TQQ_ritagliato.tif'
+im_target = path+'prs_cld_crs.tif'
+im_reference = path+'S2_20230329_B8_ritagliato_QGIS.tif'
 
 
 # In[12]:
