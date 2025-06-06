@@ -33,9 +33,11 @@ from arosics import COREG_LOCAL
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 os.chdir(r"\\10.0.1.243\nr_working\emanuele\Progetto_PRISMA\PRISMA_code")
 
-#prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\Braccagni\2023\L1\PRS_L1_STD_OFFL_20231004101115_20231004101119_0001_HCO_FULL.tif"
-path = "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/PRS_L2C_STD_20230407/"
-prisma_path = path+"PRS_L2C_STD_20230407100729_20230407100733_0001_HCO_FULL.tif"
+path = "C:/Users/emast/Desktop/250606_agile/20230304/"
+prisma_path = path+"PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_FULL.tif"
+cloud_path = path+"PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_ANG.tif"
+S2_path = path+"S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif"
+
 prisma_dataset = gdal.Open(prisma_path, gdal.GA_ReadOnly) #Read
 prisma_arr = prisma_dataset.ReadAsArray
 prisma_prj = prisma_dataset.GetProjection()
@@ -54,7 +56,7 @@ plt.title('prisma')
 plt.show()
 print("shape:", prisma_arr.shape)
 
-cloud_path = path+"PRS_L2C_STD_20230407100729_20230407100733_0001_HCO_ANG.tif"
+
 clouds = gdal.Open(cloud_path, gdal.GA_ReadOnly)
 cloud = clouds.ReadAsArray()
 cloud_3d = np.transpose(cloud, (1, 2, 0))
@@ -95,7 +97,7 @@ with rasterio.open(merged_prisma_cloud_path) as mrg:
     merged_prisma_cloud_ar = mrg.read()
 merged_prisma_cloud_ar = np.transpose(merged_prisma_cloud_ar, (1, 2, 0))
 
-S2_path = path+"S2_20230329_B8_ritagliato_QGIS.tif"
+
 S2_dataset = gdal.Open(S2_path, gdal.GA_ReadOnly)
 S2_data = S2_dataset.ReadAsArray
 S2_prj = S2_dataset.GetProjection()

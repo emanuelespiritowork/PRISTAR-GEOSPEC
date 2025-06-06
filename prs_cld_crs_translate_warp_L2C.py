@@ -16,14 +16,14 @@ import geopandas as gpd
 # In[5]:
 
 
-path = '//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/PRS_L2C_STD_20230407/'
+path = 'C:/Users/emast/Desktop/250606_agile/20230304/'
 
 
 # In[6]:
 
 
 im_target = path+'prs_cld_crs.tif'
-im_reference = path+'S2_20230329_B8_ritagliato_QGIS.tif'
+im_reference = path+'S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif'
 
 
 # In[12]:
@@ -274,8 +274,8 @@ gcps_gdal = [gdal.GCP(row['X'], row['Y'],0, row['Col'], row['Row']) for index, r
 
 
 kwargs = {
-    'format': 'GTiff',
-    'outputType': gdal.GDT_UInt16}
+    'format': 'GTiff'}
+    #'outputType': gdal.GDT_UInt16}
 
 output_image = path+'prs_cld_crs_translate.tif'
 ds_gcp = gdal.Translate(output_image, 
