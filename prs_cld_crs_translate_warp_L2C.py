@@ -16,14 +16,14 @@ import geopandas as gpd
 # In[5]:
 
 
-path = 'C:/Users/emast/Desktop/250606_agile/20230304/'
+path = 'C:/Users/emast/Desktop/250606_agile/20230407/'
 
 
 # In[6]:
 
 
-im_target = path+'prs_cld_crs.tif'
-im_reference = path+'S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif'
+im_target = path+'prs_crs.tif'
+im_reference = path+'S2_20230329_B8_ritagliato_QGIS.tif'
 
 
 # In[12]:
@@ -277,16 +277,16 @@ kwargs = {
     'format': 'GTiff'}
     #'outputType': gdal.GDT_UInt16}
 
-output_image = path+'prs_cld_crs_translate.tif'
+output_image = path+'prs_crs_translate.tif'
 ds_gcp = gdal.Translate(output_image, 
-                        path+'prs_cld_crs.tif',
+                        path+'prs_crs.tif',
                         outputSRS='EPSG:32632', 
                         GCPs=gcps_gdal,
                         **kwargs)
 
 
 options = gdal.WarpOptions(dstSRS='EPSG:32632', polynomialOrder=2, targetAlignedPixels=True, xRes=30, yRes =30)
-ds = gdal.Warp(path+'prs_cld_crs_translate_warp.tif', ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
+ds = gdal.Warp(path+'prs_crs_translate_warp.tif', ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
 ds_gcp = None
 ds = None
 
