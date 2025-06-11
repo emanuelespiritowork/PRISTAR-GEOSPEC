@@ -1,6 +1,6 @@
 {
     "installOptions": {
-        "installFromRepository": true,
+        "installFromRepository": false,
         "libraryPath": "C:/Users/Emanuele/AppData/Local/R/win-library/4.5",
         "installDependencies": true
     }

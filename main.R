@@ -45,33 +45,27 @@ prismaread::pr_convert(
 #python settings ----
 ######################################################################
 
-reticulate::py_require(python_version = "3.8.20",
-                       packages = c("geos>=3.7.2","gdal==3.6.1","arosics","rasterio"),
-                       action = "set")
+#choose in Profile the Python version you want with conda with all the 
+#packages needed packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
+#python_version = "3.8.20"
+
+usethis::edit_r_environ()
+#RETICULATE_PYTHON="C:/prova/Rconda/python.exe"
+
+reticulate::py_discover_config(use_environment = "C:/prova/Rconda/python.exe")
+
+reticulate::use_python(python = "C:/prova/Rconda/python.exe")
 
 reticulate::py_config()
 
-######################################################################
-#python settings ----
-######################################################################
-#library(reticulate)
-library(here)
-
-reticulate::install_miniconda()#install miniconda
-
-reticulate::conda_binary()#to check conda path
-
-reticulate::conda_create(envname = "C:/prova/Rconda",
-                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
-                         python_version = "3.8.20")
-
-reticulate::use_condaenv(condaenv = "C:/prova/Rconda", required = F)
+#reticulate::repl_python()
 
 ######################################################################
 #change CRS ----
 ######################################################################
 if(product_type == "L1"){
-  reticulate::source_python(here::here("prs_cld_crs_L1.py"))
+  reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1.py")
+  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1.py")
 }
 if(product_type == "L2"){
   reticulate::source_python(here::here("prs_cld_crs_L1.py"))
@@ -79,6 +73,9 @@ if(product_type == "L2"){
 
 prs_cld_crs(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))),
             s2_file)
+
+
+
 
 
 

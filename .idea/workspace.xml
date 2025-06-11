@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="750d4243-b802-41f0-a698-b0fb91d1d2ac" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/myplot.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coregistration_PRISMA_AROSICS_GDAL.py" beforeDir="false" afterPath="$PROJECT_DIR$/Coregistration_PRISMA_AROSICS_GDAL.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/warp.py" beforeDir="false" afterPath="$PROJECT_DIR$/warp.py" afterDir="false" />
-    </list>
+    <list default="true" id="750d4243-b802-41f0-a698-b0fb91d1d2ac" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -73,7 +68,8 @@
       <workItem from="1749109097931" duration="19690000" />
       <workItem from="1749459463605" duration="12000" />
       <workItem from="1749459477247" duration="246000" />
-      <workItem from="1749461514422" duration="9651000" />
+      <workItem from="1749461514422" duration="13132000" />
+      <workItem from="1749631971087" duration="396000" />
     </task>
     <servers />
   </component>
