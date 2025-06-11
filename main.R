@@ -13,6 +13,8 @@ product_type <- substring(basename(in_file),5,6)
 ######################################################################
 #prismaread ----
 ######################################################################
+#https://github.com/IREA-CNR-MI/prismaread
+
 if(product_type == "L1"){
   CLOUD <- T
   ATCOR <- T
@@ -45,9 +47,9 @@ prismaread::pr_convert(
 #python settings ----
 ######################################################################
 
-#choose in Profile the Python version you want with conda with all the 
-#packages needed packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
-#python_version = "3.8.20"
+reticulate::conda_create(envname = "C:/prova/Rconda",
+                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
+                         python_version = "3.8.20")
 
 usethis::edit_r_environ()
 #RETICULATE_PYTHON="C:/prova/Rconda/python.exe"
@@ -58,21 +60,48 @@ reticulate::use_python(python = "C:/prova/Rconda/python.exe")
 
 reticulate::py_config()
 
+#try the environment
+#reticulate::repl_python()
+
+######################################################################
+#python settings ----
+######################################################################
+
 #reticulate::repl_python()
 
 ######################################################################
 #change CRS ----
 ######################################################################
+
 if(product_type == "L1"){
-  reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1.py")
-  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1.py")
+  #reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1_Copia.py")
+  reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_L1_Copia.py")
 }
 if(product_type == "L2"){
-  reticulate::source_python(here::here("prs_cld_crs_L1.py"))
+  reticulate::source_python(here::here("prs_cld_crs_L2C_Copia.py"))
 }
 
 prs_cld_crs(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))),
             s2_file)
+
+######################################################################
+#warp ----
+######################################################################
+#https://doi.org/10.1016/j.isprsjprs.2024.07.003
+#https://doi.org/10.5281/zenodo.11547257
+
+if(product_type == "L1"){
+  #reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prova.py")
+  #reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1_Copia.py")
+  reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1.py")
+  change_crs <- paste0(out_folder,"prs_cld_crs.tif")
+}
+if(product_type == "L2"){
+  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L2C_Copia.py")
+  change_crs <- paste0(out_folder,"prs_crs.tif")
+}
+
+prs_cld_crs_translate_warp(out_folder,change_crs,s2_file)
 
 
 

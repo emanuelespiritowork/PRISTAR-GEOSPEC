@@ -15,11 +15,16 @@ import geopandas as gpd
 
 # In[5]:
 
+
+path = 'C:/Users/emast/Desktop/250606_agile/20230407/'
+
+
 # In[6]:
 
-im_target = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\prs_cld_crs.tif"
-im_reference = r'\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif'
-path = os.path.dirname(im_target)
+
+im_target = path+'prs_crs.tif'
+im_reference = path+'S2_20230329_B8_ritagliato_QGIS.tif'
+
 
 # In[12]:
 
@@ -60,11 +65,10 @@ CRL = COREG_LOCAL(im_reference,
                   #match_gsd=False,
                   resamp_alg_deshift = 'nearest',
                   resamp_alg_calc = 'nearest',
-                  path_out = os.path.join(path,'Registered_AROSICS_Local_B8_B52.tif'),
+                  path_out = path+'Registered_AROSICS_Local_B8_B52.tif',
                   fmt_out = 'GTIFF',
                   max_iter = 8,
                   #r_b4match = 1,
-                  q = True,
                   s_b4match = 51)
 
 
@@ -96,7 +100,7 @@ points
 # In[9]:
 
 
-CRL.tiepoint_grid.to_PointShapefile(path_out=os.path.join(path,'AROSICS_TiePoints_Local_B8_B52.shp'))
+CRL.tiepoint_grid.to_PointShapefile(path_out=path+'AROSICS_TiePoints_Local_B8_B52.shp')
 
 
 # In[ ]:
@@ -270,19 +274,19 @@ gcps_gdal = [gdal.GCP(row['X'], row['Y'],0, row['Col'], row['Row']) for index, r
 
 
 kwargs = {
-    'format': 'GTiff',
-    'outputType': gdal.GDT_UInt16}
+    'format': 'GTiff'}
+    #'outputType': gdal.GDT_UInt16}
 
-output_image = path+'prs_cld_crs_translate.tif'
+output_image = path+'prs_crs_translate.tif'
 ds_gcp = gdal.Translate(output_image, 
-                        path+'prs_cld_crs.tif',
+                        path+'prs_crs.tif',
                         outputSRS='EPSG:32632', 
                         GCPs=gcps_gdal,
                         **kwargs)
 
 
 options = gdal.WarpOptions(dstSRS='EPSG:32632', polynomialOrder=2, targetAlignedPixels=True, xRes=30, yRes =30)
-ds = gdal.Warp(path+'prs_cld_crs_translate_warp.tif', ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
+ds = gdal.Warp(path+'prs_crs_translate_warp.tif', ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
 ds_gcp = None
 ds = None
 
