@@ -1,1 +1,0 @@
-RETICULATE_PYTHON= "C:/prova/Rconda/python.exe"

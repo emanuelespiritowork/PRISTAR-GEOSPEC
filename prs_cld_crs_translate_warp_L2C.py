@@ -16,14 +16,14 @@ import geopandas as gpd
 # In[5]:
 
 
-path = 'C:/Users/emast/Desktop/250606_agile/20230407/'
+path = r'\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2023\L2C\prove_per_pacchetto'
 
 
 # In[6]:
 
 
-im_target = path+'prs_crs.tif'
-im_reference = path+'S2_20230329_B8_ritagliato_QGIS.tif'
+im_target = os.path.join(path,'coreg/prs_crs.tif')
+im_reference = os.path.join(path,'S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif')
 
 
 # In[12]:
@@ -65,7 +65,7 @@ CRL = COREG_LOCAL(im_reference,
                   #match_gsd=False,
                   resamp_alg_deshift = 'nearest',
                   resamp_alg_calc = 'nearest',
-                  path_out = path+'Registered_AROSICS_Local_B8_B52.tif',
+                  path_out = os.path.join(path,'coreg/Registered_AROSICS_Local_B8_B52.tif'),
                   fmt_out = 'GTIFF',
                   max_iter = 8,
                   #r_b4match = 1,
@@ -100,7 +100,7 @@ points
 # In[9]:
 
 
-CRL.tiepoint_grid.to_PointShapefile(path_out=path+'AROSICS_TiePoints_Local_B8_B52.shp')
+CRL.tiepoint_grid.to_PointShapefile(path_out=os.path.join(path,'coreg/AROSICS_TiePoints_Local_B8_B52.shp'))
 
 
 # In[ ]:
@@ -277,16 +277,16 @@ kwargs = {
     'format': 'GTiff'}
     #'outputType': gdal.GDT_UInt16}
 
-output_image = path+'prs_crs_translate.tif'
+output_image = os.path.join(path,'coreg/prs_crs_translate.tif')
 ds_gcp = gdal.Translate(output_image, 
-                        path+'prs_crs.tif',
+                        os.path.join(path,'coreg/prs_crs.tif'),
                         outputSRS='EPSG:32632', 
                         GCPs=gcps_gdal,
                         **kwargs)
 
 
 options = gdal.WarpOptions(dstSRS='EPSG:32632', polynomialOrder=2, targetAlignedPixels=True, xRes=30, yRes =30)
-ds = gdal.Warp(path+'prs_crs_translate_warp.tif', ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
+ds = gdal.Warp(os.path.join(path,'coreg/prs_crs_translate_warp.tif'), ds_gcp, dstNodata = np.nan, options=options, resampleAlg="near")
 ds_gcp = None
 ds = None
 

@@ -30,6 +30,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.prs_cld_crs_translate_warp_L1.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
@@ -81,11 +82,18 @@
       <workItem from="1749648751826" duration="677000" />
       <workItem from="1749649451479" duration="232000" />
       <workItem from="1749649881331" duration="2298000" />
-      <workItem from="1749653482343" duration="2337000" />
+      <workItem from="1749653482343" duration="4661000" />
+      <workItem from="1750061750005" duration="1014000" />
+      <workItem from="1750062815897" duration="2433000" />
+      <workItem from="1750065820022" duration="143000" />
+      <workItem from="1750065988057" duration="7533000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/prs_cld_crs_translate_warp_py$prs_cld_crs_translate_warp_L1.coverage" NAME="prs_cld_crs_translate_warp_L1 Coverage Results" MODIFIED="1750059627400" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

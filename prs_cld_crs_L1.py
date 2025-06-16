@@ -34,8 +34,13 @@ from arosics import COREG_LOCAL
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 #os.chdir("Z:/Progetto_PRISMA/PRISMA_code")
 
+############ INPUTS ################
 prisma_FULL_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\PRS_L1_STD_OFFL_20250424100426_20250424100430_0001_HCO_FULL.tif"
 S2_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif"
+
+
+############ CODE ################
+os.mkdir(os.path.join(os.path.dirname(prisma_FULL_path),"coreg"))
 cloud_path = os.path.join(os.path.dirname(prisma_FULL_path), os.path.basename(prisma_FULL_path).replace("FULL","CLD"))
 
 prisma_dataset = gdal.Open(prisma_FULL_path, gdal.GA_ReadOnly) #Read
@@ -93,7 +98,7 @@ metadata = {
 eroded_cld[:, 0] = 1   # Set 1 in the first column for all bands
 eroded_cld[:, -1] = 1  # Set 1 in the last column for all bands
 
-output_cloud = os.path.join(os.path.dirname(prisma_FULL_path),"cloud.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\cloud.tif"
+output_cloud = os.path.join(os.path.dirname(prisma_FULL_path),"coreg/cloud.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\cloud.tif"
 with rasterio.open(output_cloud, 'w', **metadata) as dst:
     dst.write(eroded_cld, 1)
 
@@ -104,7 +109,7 @@ merged_prisma_cld = np.concatenate((prisma_arr, cloud_3d), axis=2)
 #combined_arr = np.dstack((prisma_arr, cloud_3d))
 #merged_prisma_cld[merged_prisma_cld == -999] = np.nan
 
-output_geotiff_path = os.path.join(os.path.dirname(prisma_FULL_path),"prs_cld.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld.tif"
+output_geotiff_path = os.path.join(os.path.dirname(prisma_FULL_path),"coreg/prs_cld.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld.tif"
 crs = prs.crs.to_wkt()
 # Create a rasterio Profile
 profile = {
@@ -141,5 +146,5 @@ merged_prisma_cloud_ar = np.transpose(merged_prisma_cloud_ar, (1, 2, 0))
 S2_dataset = gdal.Open(S2_path, gdal.GA_ReadOnly)
 S2_prj = S2_dataset.GetProjection()
 
-output_warp = os.path.join(os.path.dirname(prisma_FULL_path),"prs_cld_crs.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld_crs.tif"
+output_warp = os.path.join(os.path.dirname(prisma_FULL_path),"coreg/prs_cld_crs.tif") #r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\PRS_L1_STD_OFFL_20250424\prs_cld_crs.tif"
 gdal.Warp(output_warp, merged_prisma_cloud, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30) #prisma_dataset

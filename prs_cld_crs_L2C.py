@@ -33,10 +33,12 @@ from arosics import COREG_LOCAL
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 os.chdir(r"\\10.0.1.243\nr_working\emanuele\Progetto_PRISMA\PRISMA_code")
 
-path = "C:/Users/emast/Desktop/250606_agile/20230407/"
-prisma_path = path+"PRS_L2C_STD_20230407100729_20230407100733_0001_HCO_FULL.tif"
+############ INPUTS ################
+prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2023\L2C\prove_per_pacchetto\PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_FULL.tif"
+path = os.path.dirname(prisma_path)
+os.mkdir(os.path.join(path,"coreg"))
 #cloud_path = path+"PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_ANG.tif"
-S2_path = path+"S2_20230329_B8_ritagliato_QGIS.tif"
+S2_path = os.path.join(path,"S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif")
 
 prisma_dataset = gdal.Open(prisma_path, gdal.GA_ReadOnly) #Read
 prisma_arr = prisma_dataset.ReadAsArray
@@ -65,7 +67,7 @@ print("datatype:",prisma_arr.dtype)
 #combined_arr = np.dstack((prisma_arr, cloud_3d))
 #merged_prisma_cld[merged_prisma_cld == -999] = np.nan
 
-output_geotiff_path = path+"prs.tif"
+output_geotiff_path = os.path.join(path,"coreg/prs.tif")
 crs = prs.crs.to_wkt()
 # Create a rasterio Profile
 profile = {
@@ -85,7 +87,7 @@ with rasterio.open(output_geotiff_path, 'w', **profile) as dst:
 
 print("GeoTIFF file has been created:", output_geotiff_path)
 
-merged_prisma_cloud_path = path+"prs.tif"
+merged_prisma_cloud_path = os.path.join(path,"coreg/prs.tif")
 merged_prisma_cloud = gdal.Open(merged_prisma_cloud_path, gdal.GA_ReadOnly)
 
 S2_dataset = gdal.Open(S2_path, gdal.GA_ReadOnly)
@@ -99,6 +101,6 @@ with rasterio.open(S2_path) as src:
     print("Transform (Affine):", src.transform)
     S2_data = src.read()
 
-output_warp = path+"prs_crs.tif"
+output_warp = os.path.join(path,"coreg/prs_crs.tif")
 gdal.Warp(output_warp, merged_prisma_cloud, format='GTiff', dstSRS=S2_prj, resampleAlg="near", srcNodata=-999, xRes=30, yRes=30) #prisma_dataset
 
