@@ -93,7 +93,7 @@ prs_cld_crs(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))),
 if(product_type == "L1"){
   #reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prova.py")
   #reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1_Copia.py")
-  reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1.py")
+  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1.py")
   change_crs <- paste0(out_folder,"prs_cld_crs.tif")
 }
 if(product_type == "L2"){
