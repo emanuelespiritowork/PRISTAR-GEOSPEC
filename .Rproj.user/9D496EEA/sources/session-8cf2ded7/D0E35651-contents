@@ -4,10 +4,12 @@
 #author: Emanuele Spirito
 #site: CNR-IREA-MI
 
-in_file  <-  "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/PRS_L2C_STD_20230304102047_20230304102051_0001.he5"
+in_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/PRS_L2C_STD_20230304102047_20230304102051_0001.he5"
 out_folder  <-  "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/"
 s2_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif"
-
+#in_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/PRS_L1_STD_OFFL_20250424100426_20250424100430_0001.he5"
+#out_folder <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/"
+#s2_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif"
 
 ######################################################################
 #deduce folders ----
@@ -108,13 +110,12 @@ if(product_type == "L2"){
   input_image_path <- paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
 }
 
-output_folder <- "E:/PRISMA_images_smoothed/"
-output_path <-  paste0(output_folder, image_date, "_PRISMA_smoothed.tif")
+output_path <-  paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
 
 PRISMA_config <- tidytable::fread(here::here("PRISMA_spectral_configuration.csv")) %>%
   mutate(band_row = row_number()) 
 
-PRISMA_bad_bands_table <- fread(here("config_data", "PRISMA_band_selections.csv")) %>%
+PRISMA_bad_bands_table <- tidytable::fread(here::here("PRISMA_band_selections.csv")) %>%
   filter(BB_SUPER_V3 == 1)
 
 input_bad_bands <- PRISMA_bad_bands_table$band
@@ -143,11 +144,17 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
 }
 
 
-terra_image <- rast(input_image_path)
+terra_image <- terra::rast(input_image_path)
 
+if(product_type == "L1"){
+  terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
+}
+if(product_type == "L2"){
+  terra_image_sub <- terra_image
+}
 
-output_image <- app(
-  x = terra_image,
+output_image <- terra::app(
+  x = terra_image_sub,
   fun = spline_fun,
   band_center_input = input_wvl, 
   bad_bands_pos = input_bad_bands, 
@@ -160,28 +167,6 @@ output_image <- app(
   wopt = list(gdal = c("COMPRESS=LZW", "TILED=YES"))
 )
 
-
-
-output_image <- app(terra_image, function(i, band_center_input, bad_bands_pos, band_center_output){
-  
-  center_to_spline <- band_center_input[-bad_bands_pos]
-  ref_to_spline <- i[-bad_bands_pos]
-  
-  if (any(is.na(ref_to_spline))) {
-    return(rep(NA, length(band_center_output)))
-  }
-  
-  spline_function <- stats::smooth.spline(center_to_spline, ref_to_spline, df = 40)
-  
-  res <- predict(spline_function, x = band_center_output)$y
-  
-  res[res < 0] <- 0
-  
-  return(res)
-  
-}, band_center_input = input_wvl, bad_bands_pos = input_bad_bands, band_center_output = output_wvl,
-cores = 7, filename = paste0(output_folder, image_date, "_PRISMA_smoothed.tif")
-) 
 
 
 

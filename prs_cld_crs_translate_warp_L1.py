@@ -122,11 +122,11 @@ CRL.tiepoint_grid.to_PointShapefile(path_out=os.path.join(path,'coreg/AROSICS_Ti
 
 
 lista_files = []
-dirFileList = os.listdir(path) #legge la cartella 1
-os.chdir(path) #setta la cartella
+dirFileList = os.listdir(os.path.join(path,"coreg")) #legge la cartella 1
+os.chdir(os.path.join(path,"coreg")) #setta la cartella
 for file in dirFileList: #per ciascun file nella cartella 1
     if os.path.splitext(file)[-1] == '.shp': #le cui ultime lettere sono ".img"
-        lista_files.append(os.path.join(path, file)) #aggiungile alla lista vuot
+        lista_files.append(os.path.join(path, "coreg", file)) #aggiungile alla lista vuot
 
 lista_files
 
