@@ -14,9 +14,10 @@ s2_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchet
 ######################################################################
 #deduce folders ----
 ######################################################################
-product_type <- substring(basename(in_file),5,6)
-coreg_out_folder <- paste0(out_folder,"coreg/")
-smoothing_out_folder <- paste0(out_folder,"smoothing/")
+product_type <- base::substring(base::basename(in_file),5,6)
+coreg_out_folder <- base::paste0(out_folder,"coreg/")
+smoothing_out_folder <- base::paste0(out_folder,"smoothing/")
+regrid_out_folder <- base::paste0(out_folder,"regrid/")
 
 ######################################################################
 #prismaread ----
@@ -59,8 +60,10 @@ reticulate::conda_create(envname = "C:/prova/Rconda",
                          packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
                          python_version = "3.8.20")
 
-usethis::edit_r_environ()
-#RETICULATE_PYTHON="C:/prova/Rconda/python.exe"
+Sys.setenv(RETICULATE_PYTHON = "C:/prova/Rconda/python.exe")
+
+#way to force the environment
+#usethis::edit_r_environ(scope = "project")
 
 reticulate::py_discover_config(use_environment = "C:/prova/Rconda/python.exe")
 
@@ -99,32 +102,34 @@ prs_cld_crs_translate_warp(out_folder,change_crs,s2_file)
 ######################################################################
 #smoothing ----
 ######################################################################
+#thanks to Lorenzo Parigi @ CNR-IREA
+
 library(tidytable)
 
 base::dir.create(smoothing_out_folder, recursive = T, showWarnings = F)
 
 if(product_type == "L1"){
-  input_image_path <- paste0(coreg_out_folder,"prs_cld_crs_translate_warp.tif")
+  input_image_path <- base::paste0(coreg_out_folder,"prs_cld_crs_translate_warp.tif")
 }
 if(product_type == "L2"){
-  input_image_path <- paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
+  input_image_path <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
 }
 
-output_path <-  paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
+smoothing_out <-  paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
 
 PRISMA_config <- tidytable::fread(here::here("PRISMA_spectral_configuration.csv")) %>%
-  mutate(band_row = row_number()) 
+  tidytable::mutate(band_row = tidytable::row_number()) 
 
 PRISMA_bad_bands_table <- tidytable::fread(here::here("PRISMA_band_selections.csv")) %>%
-  filter(BB_SUPER_V3 == 1)
+  tidytable::filter(BB_SUPER_V3 == 1)
 
 input_bad_bands <- PRISMA_bad_bands_table$band
 
 input_wvl <- PRISMA_config$center
 
 output_wvl <- PRISMA_config %>%
-  filter(BND_SEL  == 1) %>%
-  pull(center)
+  tidytable::filter(BND_SEL  == 1) %>%
+  tidytable::pull(center)
 
 
 spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
@@ -132,12 +137,12 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
   ref_valid <- pixel[-bad_bands_pos]
   wvl_valid <- band_center_input[-bad_bands_pos]
   
-  if (any(is.na(ref_valid))) {
-    return(rep(NA_real_, length(band_center_output)))
+  if (base::any(is.na(ref_valid))) {
+    return(base::rep(NA_real_, base::length(band_center_output)))
   }
   
   sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
-  y_smooth <- predict(sp, x = band_center_output)$y
+  y_smooth <- stats::predict(sp, x = band_center_output)$y
   # limitiamo a zero
   y_smooth[y_smooth < 0] <- 0
   return(y_smooth)
@@ -162,13 +167,40 @@ output_image <- terra::app(
   df=40,
   
   cores = 7,                     
-  filename = output_path,
+  filename = smoothing_out,
   overwrite = TRUE,
-  wopt = list(gdal = c("COMPRESS=LZW", "TILED=YES"))
+  wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
 )
 
+######################################################################
+#regrid ----
+######################################################################
+#thanks to Riccardo Canazza @ CNR-IREA
 
+#should I use gdalUtils::gdalwarp or sen2r::gdalwarp_grid??
 
+base::dir.create(regrid_out_folder, recursive = T, showWarnings = F)
 
+if(product_type == "L1"){
+  resample_type <- "nearest"
+}
+if(product_type == "L2"){
+  resample_type <- "cubicspline"
+}
 
+master_image_path <- "//10.0.1.243/projects/2022_ASI-PRIS4VEG/3-DATA/images/PRISMA_img_master/PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b"
+
+terra::extend(x = terra::rast(master_image_path),
+              y = terra::rast(smoothing_out),
+              fill = 0,
+              filename = paste0(regrid_out_folder,"PRISMA_extend.tif"),
+              overwrite = T)
+
+terra::resample(x = terra::rast(smoothing_out),
+                y = terra::rast(paste0(regrid_out_folder,"PRISMA_extend.tif")),
+                method = resample_type,
+                threads = T,
+                by_util = T,
+                filename = paste0(regrid_out_folder,"PRISMA_resample.tif"),
+                overwrite = T)
 
