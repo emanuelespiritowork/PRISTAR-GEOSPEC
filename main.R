@@ -53,51 +53,53 @@ prismaread::pr_convert(
 )
 
 ######################################################################
-#python settings ----
+#set working directory of python shell ----
 ######################################################################
+command <- paste0("cd", " ", here::here())#this needs the script to be in a mount drived, not in the server
+#alternatives at https://superuser.com/questions/1014248/change-working-directory-to-network-share
+system(command)
 
-reticulate::conda_create(envname = "C:/prova/Rconda",
-                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
-                         python_version = "3.8.20")
-
-Sys.setenv(RETICULATE_PYTHON = "C:/prova/Rconda/python.exe")
-
-#way to force the environment
-#usethis::edit_r_environ(scope = "project")
-
-reticulate::py_discover_config(use_environment = "C:/prova/Rconda/python.exe")
-
-reticulate::use_python(python = "C:/prova/Rconda/python.exe")
-
-reticulate::py_config()
-
-#try the environment
-#reticulate::repl_python()
+#this way the prompt is set to a specific working directory
+#when executing python, its working directory will be the same as this?
 
 ######################################################################
 #change CRS ----
 ######################################################################
-prs_cld_crs(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))),
-            s2_file)
+#first I write the inputs of prs_cld_crs.py into a file
+prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file)))
+s2_input <- s2_file
+prs_cld_crs <- c(prisma_input,s2_input)
+utils::write.csv(prs_cld_crs, 
+          paste0(here::here(),"/inputs_of_python_code.csv"),
+          row.names = F,
+          col.names = F, 
+          quote = F)
+
+
+if(product_type == "L1"){
+  prs_crs_python_path <- paste0(here::here(),"/prs_cld_crs_L1.py")
+}
+if(product_type == "L2"){
+  prs_crs_python_path <- paste0(here::here(),"/prs_cld_crs_L2C.py")
+}
+command <- paste0("python ",prs_crs_python_path)
+system(command)
+
 
 ######################################################################
 #warp ----
 ######################################################################
 #https://doi.org/10.1016/j.isprsjprs.2024.07.003
 #https://doi.org/10.5281/zenodo.11547257
-
 if(product_type == "L1"){
-  #reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prova.py")
-  #reticulate::source_python("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1_Copia.py")
-  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L1.py")
-  change_crs <- paste0(coreg_out_folder,"prs_cld_crs.tif")
+  prs_crs_warp_python_path <- paste0(here::here(),"/prs_cld_crs_translate_warp_L1.py")
 }
 if(product_type == "L2"){
-  reticulate::py_run_file("//10.0.1.243/nr_working/emanuele/Progetto_PRISMA/PRISMA_code/prs_cld_crs_translate_warp_L2C_Copia.py")
-  change_crs <- paste0(coreg_out_folder,"prs_crs.tif")
+  prs_crs_warp_python_path <- paste0(here::here(),"/prs_cld_crs_translate_warp_L2C.py")
 }
+command <- paste0("python ",prs_crs_warp_python_path)
+system(command)
 
-prs_cld_crs_translate_warp(out_folder,change_crs,s2_file)
 
 ######################################################################
 #smoothing ----
@@ -203,4 +205,34 @@ terra::resample(x = terra::rast(smoothing_out),
                 by_util = T,
                 filename = paste0(regrid_out_folder,"PRISMA_resample.tif"),
                 overwrite = T)
+
+
+
+
+
+
+
+
+
+######################################################################
+#python settings ----
+######################################################################
+
+reticulate::conda_create(envname = "C:/prova/Rconda",
+                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),                         packages = c("gdal==3.6.1","arosics==1.10.2","rasterio==1.3.4"),
+                         python_version = "3.8.20")
+
+Sys.setenv(RETICULATE_PYTHON = "C:/prova/Rconda/python.exe")
+
+#way to force the environment
+#usethis::edit_r_environ(scope = "project")
+
+reticulate::py_discover_config(use_environment = "C:/prova/Rconda/python.exe")
+
+reticulate::use_python(python = "C:/prova/Rconda/python.exe")
+
+reticulate::py_config()
+
+#try the environment
+#reticulate::repl_python()
 

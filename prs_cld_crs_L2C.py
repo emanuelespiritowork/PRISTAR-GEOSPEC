@@ -31,14 +31,24 @@ from geoarray import GeoArray
 import spectral
 from arosics import COREG_LOCAL
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+import csv
+import sys
 os.chdir(r"\\10.0.1.243\nr_working\emanuele\Progetto_PRISMA\PRISMA_code")
 
 ############ INPUTS ################
-prisma_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2023\L2C\prove_per_pacchetto\PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_FULL.tif"
+csv_file = os.path.join(os.getcwd(),"inputs_of_python_code.csv")
+with open(csv_file, 'r') as f:
+    f_csv = csv.reader(f)
+    paths = []
+    for line in f_csv:
+        paths.append(line)
+
+prisma_path = ''.join(paths[1])
+S2_path = ''.join(paths[2])
 path = os.path.dirname(prisma_path)
 os.mkdir(os.path.join(path,"coreg"))
 #cloud_path = path+"PRS_L2C_STD_20230304102047_20230304102051_0001_HCO_ANG.tif"
-S2_path = os.path.join(path,"S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif")
+#S2_path = os.path.join(path,"S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif")
 
 prisma_dataset = gdal.Open(prisma_path, gdal.GA_ReadOnly) #Read
 prisma_arr = prisma_dataset.ReadAsArray

@@ -14,16 +14,29 @@ import os
 import geopandas as gpd
 
 # In[5]:
+import csv
+import sys
+os.chdir(r"\\10.0.1.243\nr_working\emanuele\Progetto_PRISMA\PRISMA_code")
+
+############ INPUTS ################
+csv_file = os.path.join(os.getcwd(),"inputs_of_python_code.csv")
+with open(csv_file, 'r') as f:
+    f_csv = csv.reader(f)
+    paths = []
+    for line in f_csv:
+        paths.append(line)
+
+prisma_FULL_path = ''.join(paths[1])
 
 
-path = r'\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2023\L2C\prove_per_pacchetto'
+path = os.path.dirname(prisma_FULL_path)
+im_reference = ''.join(paths[2])
 
 
 # In[6]:
 
 
 im_target = os.path.join(path,'coreg/prs_crs.tif')
-im_reference = os.path.join(path,'S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif')
 
 
 # In[12]:

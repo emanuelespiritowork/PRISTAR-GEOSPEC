@@ -35,8 +35,20 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 #os.chdir("Z:/Progetto_PRISMA/PRISMA_code")
 
 ############ INPUTS ################
-prisma_FULL_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\PRS_L1_STD_OFFL_20250424100426_20250424100430_0001_HCO_FULL.tif"
-S2_path = r"\\10.0.1.243\nr_data\3_rs_data\PRISMA\JDS\2025\L1\prove_per_pacchetto\S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif"
+import csv
+import sys
+os.chdir(r"\\10.0.1.243\nr_working\emanuele\Progetto_PRISMA\PRISMA_code")
+
+############ INPUTS ################
+csv_file = os.path.join(os.getcwd(),"inputs_of_python_code.csv")
+with open(csv_file, 'r') as f:
+    f_csv = csv.reader(f)
+    paths = []
+    for line in f_csv:
+        paths.append(line)
+
+prisma_FULL_path = ''.join(paths[1])
+S2_path = ''.join(paths[2])
 
 
 ############ CODE ################
