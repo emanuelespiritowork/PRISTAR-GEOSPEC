@@ -1,0 +1,1 @@
+docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/Users/emanuele/Desktop/PRISMA_code:/space:rw eo/rarosics:latest 
