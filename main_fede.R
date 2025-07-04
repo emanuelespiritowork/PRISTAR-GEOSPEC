@@ -1,29 +1,41 @@
-#main
-
 #designed in Jun 2025
 #author: Emanuele Spirito
 #site: CNR-IREA-MI
 
-in_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/PRS_L2C_STD_20230304102047_20230304102051_0001.he5"
-out_folder  <-  "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/"
-s2_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2023/L2C/prove_per_pacchetto/S2_20230309_B08_T32TQQ_ritagliato_QGIS.tif"
-#in_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/PRS_L1_STD_OFFL_20250424100426_20250424100430_0001.he5"
-#out_folder <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/"
-#s2_file <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/2025/L1/prove_per_pacchetto/S2_20250422T101051_B08_T32TQQ_ritagliato_coordinate.tif"
+#citations: 
 
-######################################################################
-#deduce folders ----
-######################################################################
+#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
+#https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
+
+#Lorenzo Busatto @ CNR-IREA for prismaread package 
+#https://github.com/IREA-CNR-MI/prismaread
+
+#Federico Filipponi @ CNR-IGAG for coregistration procedure with Arosics and GDAL
+
+#Lorenzo Parigi @ CNR-IREA for smoothing procedure
+
+#Riccardo Canazza for advice in regrid procedure
+
+#_____________________________________________________________________
+#inputs ----
+#_____________________________________________________________________
+#for normal users: modify only things in this section 
+out_folder  <-  "/space/put_PRISMA_he5_and_S2_tif_here/"
+
+#_____________________________________________________________________
+#setup folders ----
+#_____________________________________________________________________
+in_file <- list.files(path = out_folder, pattern = "\\.he5$", ignore.case = T, full.names = T)
+s2_file <- list.files(path = out_folder, pattern = "\\.tif$", ignore.case = T, full.names = T)
+setwd(dirname(out_folder))
 product_type <- base::substring(base::basename(in_file),5,6)
 coreg_out_folder <- base::paste0(out_folder,"coreg/")
 smoothing_out_folder <- base::paste0(out_folder,"smoothing/")
 regrid_out_folder <- base::paste0(out_folder,"regrid/")
 
-######################################################################
+#_____________________________________________________________________
 #prismaread ----
-######################################################################
-#https://github.com/IREA-CNR-MI/prismaread
-
+#_____________________________________________________________________
 if(product_type == "L1"){
   CLOUD <- T
   ATCOR <- T
@@ -52,37 +64,49 @@ prismaread::pr_convert(
   ATCOR = ATCOR
 )
 
-######################################################################
-#coregistration ----
-######################################################################
+#_____________________________________________________________________
+#preparing ----
+#_____________________________________________________________________
+#work on cloud mask for pixel strips
+if(product_type == "L1"){
+  cloud <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_CLD.tif",basename(in_file))))
+  terra::plot(cloud)
+  
+  full <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))))
+  
+  dilationErosion(image, Filter, method = "dilation", threads = 1)
+  
+  prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file)))
+}
+if(product_type == "L2"){
+  prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file)))
+}
 
-#create single layer image to coregister
-prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file)))
-prisma_projected <- terra::project(x = prisma_input,
+#create single layer image to coregister and change crs to EPSG:32632
+prisma_projected <- terra::project(x = terra::rast(prisma_input),
                                        y = "epsg:32632",
                                        method = "near")
 terra::writeRaster(prisma_projected, paste0(out_folder,gsub(".he5","_HCO_FULL_proj.tif",basename(in_file))))
-prisma_b52 <- terra::subset(terra::rast(prisma_projected),52)
-
-#change crs to EPSG:32632
-
+prisma_b52 <- terra::subset(x = prisma_projected, subset = 52)
 terra::writeRaster(prisma_b52, paste0(out_folder,gsub(".he5","_HCO_FULL_proj_52.tif",basename(in_file))))
 
-
-# set arguments (questo lo devi modificare con i percorsi definiti nel docker container)
+#_____________________________________________________________________
+#coregistration ----
+#_____________________________________________________________________
+# set arguments
 single_band_reference_image <- s2_file
 single_band_image_to_coregister <- paste0(out_folder,gsub(".he5","_HCO_FULL_proj_52.tif",basename(in_file)))
 multiband_image_to_coregister <- paste0(out_folder,gsub(".he5","_HCO_FULL_proj.tif",basename(in_file)))
-arosics_local_path <- "python arosics_local.py"
+arosics_local_path <- paste0("python"," ",getwd(),"/arosics_local.py")
 target_epsg <- "'EPSG:32632'"
 output_directory <- coreg_out_folder
-output_file <- "prs_crs_translate_warp.tif"
+output_file <- paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
 
 dir.create(coreg_out_folder, recursive = T, showWarnings = F)
 
-
 # setup AROSICS run command
-paste(arosics_local_path, "-v -r", single_band_reference_image, "-t", single_band_image_to_coregister, "-l", normalizePath(path=paste(output_directory, "/", "AROSICS_coregistration_info.json", sep=""), winslash="/", mustWork=FALSE), "-m", normalizePath(path=paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), "-g", normalizePath(path=paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE), sep=" ")
+#IMPROVE: potrei usare AROSICS da riga di comando?
+arosics_run_command <- paste(arosics_local_path, "-v -r", single_band_reference_image, "-t", single_band_image_to_coregister, "-l", normalizePath(path=paste(output_directory, "/", "AROSICS_coregistration_info.json", sep=""), winslash="/", mustWork=FALSE), "-m", normalizePath(path=paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), "-g", normalizePath(path=paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE), sep=" ")
 # run AROSICS to get GCPs
 system(arosics_run_command)
 # import GCPs
@@ -94,32 +118,25 @@ GDAL_VRT_run_command <- paste("gdal_translate -q -of VRT", gcp_args, multiband_i
 system(GDAL_VRT_run_command)
 # warp input image using second order polynomial
 target_epsg <- "'EPSG:32632'"
-GDAL_WARP_run_command <- paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 5 5 -t_srs", target_epsg, normalizePath(path=paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file, sep=" ")
+GDAL_WARP_run_command <- paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 30 30 -t_srs", target_epsg, normalizePath(path=paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file, sep=" ")
 system(GDAL_WARP_run_command)
 
 
-######################################################################
+#_____________________________________________________________________
 #smoothing ----
-######################################################################
-#thanks to Lorenzo Parigi @ CNR-IREA
-
+#_____________________________________________________________________
 library(tidytable)
 
 base::dir.create(smoothing_out_folder, recursive = T, showWarnings = F)
 
-if(product_type == "L1"){
-  input_image_path <- base::paste0(coreg_out_folder,"prs_cld_crs_translate_warp.tif")
-}
-if(product_type == "L2"){
-  input_image_path <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
-}
+input_image_path <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
 
-smoothing_out <-  paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
+smoothing_out <-  base::paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
 
-PRISMA_config <- tidytable::fread(here::here("PRISMA_spectral_configuration.csv")) %>%
+PRISMA_config <- tidytable::fread(paste0(getwd(),"/PRISMA_spectral_configuration.csv")) %>%
   tidytable::mutate(band_row = tidytable::row_number()) 
 
-PRISMA_bad_bands_table <- tidytable::fread(here::here("PRISMA_band_selections.csv")) %>%
+PRISMA_bad_bands_table <- tidytable::fread(paste0(getwd(),"/PRISMA_band_selections.csv")) %>%
   tidytable::filter(BB_SUPER_V3 == 1)
 
 input_bad_bands <- PRISMA_bad_bands_table$band
@@ -171,23 +188,22 @@ output_image <- terra::app(
   wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
 )
 
-######################################################################
+#_____________________________________________________________________
 #regrid ----
-######################################################################
-#thanks to Riccardo Canazza @ CNR-IREA
-
-#should I use gdalUtils::gdalwarp or sen2r::gdalwarp_grid??
+#_____________________________________________________________________
+#IMPROVE: should I use gdalUtils::gdalwarp or sen2r::gdalwarp_grid??
 
 base::dir.create(regrid_out_folder, recursive = T, showWarnings = F)
 
 if(product_type == "L1"){
-  resample_type <- "nearest"
+  resample_type <- "near"
 }
 if(product_type == "L2"){
   resample_type <- "cubicspline"
 }
 
-master_image_path <- "//10.0.1.243/projects/2022_ASI-PRIS4VEG/3-DATA/images/PRISMA_img_master/PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b"
+#NOTE: master image from \\10.0.1.243\projects\2022_ASI-PRIS4VEG\3-DATA\images\PRISMA_img_master\PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b
+master_image_path <- paste0(getwd(),"/regrid_master_image_52.tif")
 
 terra::extend(x = terra::rast(master_image_path),
               y = terra::rast(smoothing_out),
