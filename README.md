@@ -1,32 +1,8 @@
 # PRISMA
+PRISMA geocoding, smoothing, match-up, geocode refinement
 
-PRISMA geocoding, smoothing, regriding
+prismaread taken from: https://irea-cnr-mi.github.io/prismaread/ 
 
+geocoding taken from: https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257 of Giandomenico De Luca @ CNR-IBE
 
-
-\#citations: 
-
-
-
-\#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
-
-\#https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
-
-
-
-\#Lorenzo Busatto @ CNR-IREA for prismaread package 
-
-\#https://github.com/IREA-CNR-MI/prismaread
-
-
-
-\#Federico Filipponi @ CNR-IGAG for coregistration procedure with Arosics and GDAL
-
-
-
-\#Lorenzo Parigi @ CNR-IREA for smoothing procedure
-
-
-
-\#Riccardo Canazza for advice in regrid procedure
-
+smoothing thanks to Lorenzo Parigi @ CNR-IREA

@@ -327,12 +327,11 @@ if compute_gcp == True:
 
     # set coregistration arguments
     kwargs = {
-        'grid_res'     : 122,
-        # 'grid_res'     : 61,
-        # 'window_size'  : (64,64),
-        'window_size'  : (256,256),
-        'max_points'   : 7000,
-        'max_shift'    : 5,
+        'grid_res'     : 10,#modificato
+        'window_size'  : (128,128),#modificato
+        'max_shift'    : 10,#modificato
+        'resamp_alg_deshift': "nearest",#non c'era
+        'resamp_alg_calc': 'nearest',#non c'era
         'path_out'     : 'auto',
         'projectDir'   : 'my_project',
         'min_reliability' : 40,
@@ -554,7 +553,7 @@ if coregister_image == True:
     # set coregistration parameters
     kwargs = {
         'path_out'     : options.output_file,
-        'resamp_alg'   : 'cubic',
+        'resamp_alg'   : 'nearest',#ERA CUBIC
         'fmt_out'      : 'GTIFF',
         #'out_crea_options' : 'COMPRESS=LZW',
         'nodata'       : img_nodata_value,

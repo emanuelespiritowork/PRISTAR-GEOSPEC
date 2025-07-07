@@ -70,11 +70,24 @@ prismaread::pr_convert(
 #work on cloud mask for pixel strips
 if(product_type == "L1"){
   cloud <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_CLD.tif",basename(in_file))))
+  cloud <- terra::subst(cloud, NA, 1)
   terra::plot(cloud)
   
   full <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))))
   
-  dilationErosion(image, Filter, method = "dilation", threads = 1)
+  cloud_dil <- spatialist::erodil_raster(raster = cloud, 
+                                         width = c(3,3), 
+                                         type = "box", 
+                                         erosion = T, 
+                                         dilation = F,
+                                         erosion_first = F, 
+                                         nt = 1)
+  
+  terra::plot(cloud_dil)
+  
+  terra::add(full) <- cloud
+  
+  terra::writeRaster(full, paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file))))
   
   prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file)))
 }
@@ -86,9 +99,13 @@ if(product_type == "L2"){
 prisma_projected <- terra::project(x = terra::rast(prisma_input),
                                        y = "epsg:32632",
                                        method = "near")
-terra::writeRaster(prisma_projected, paste0(out_folder,gsub(".he5","_HCO_FULL_proj.tif",basename(in_file))))
+terra::writeRaster(prisma_projected, 
+                   paste0(out_folder,gsub(".he5","_HCO_FULL_proj.tif",basename(in_file))),
+                   overwrite = T)
 prisma_b52 <- terra::subset(x = prisma_projected, subset = 52)
-terra::writeRaster(prisma_b52, paste0(out_folder,gsub(".he5","_HCO_FULL_proj_52.tif",basename(in_file))))
+terra::writeRaster(prisma_b52, 
+                   paste0(out_folder,gsub(".he5","_HCO_FULL_proj_52.tif",basename(in_file))),
+                   overwrite = T)
 
 #_____________________________________________________________________
 #coregistration ----
