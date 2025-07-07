@@ -29,9 +29,9 @@ in_file <- list.files(path = out_folder, pattern = "\\.he5$", ignore.case = T, f
 s2_file <- list.files(path = out_folder, pattern = "\\.tif$", ignore.case = T, full.names = T)
 setwd(dirname(out_folder))
 product_type <- base::substring(base::basename(in_file),5,6)
-coreg_out_folder <- base::paste0(out_folder,"coreg/")
-smoothing_out_folder <- base::paste0(out_folder,"smoothing/")
-regrid_out_folder <- base::paste0(out_folder,"regrid/")
+coreg_out_folder <- base::paste0(out_folder,"1_coreg/")
+smoothing_out_folder <- base::paste0(out_folder,"2_smoothing/")
+regrid_out_folder <- base::paste0(out_folder,"3_regrid/")
 
 #_____________________________________________________________________
 #prismaread ----
@@ -85,9 +85,10 @@ if(product_type == "L1"){
   
   terra::plot(cloud_dil)
   
-  terra::add(full) <- cloud
+  terra::add(full) <- cloud_dil
   
-  terra::writeRaster(full, paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file))))
+  terra::writeRaster(full, paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file))),
+                     overwrite = T)
   
   prisma_input <- paste0(out_folder,gsub(".he5","_HCO_FULL_CLD.tif",basename(in_file)))
 }

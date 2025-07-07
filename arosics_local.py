@@ -329,7 +329,8 @@ if compute_gcp == True:
     kwargs = {
         'grid_res'     : 10,#modificato
         'window_size'  : (128,128),#modificato
-        'max_shift'    : 10,#modificato
+        'max_shift'    : 10,#modificato,
+        'max_points'   : 100,
         'resamp_alg_deshift': "nearest",#non c'era
         'resamp_alg_calc': 'nearest',#non c'era
         'path_out'     : 'auto',
