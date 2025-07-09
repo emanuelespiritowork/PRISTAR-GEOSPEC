@@ -32,4 +32,7 @@ then put inside the box:
 ```cmd
 /space/
 ```
-
+# HOW TO USE IT
+Open the main.R file in the Rstudio server and put the PRISMA file in .he5 format and the S2 reference file in the .tif format in the folder "put_PRISMA_he5_and_S2_tif_here". Click on source and the code will start. 
+# WHAT IF A PROBLEM
+Ask
