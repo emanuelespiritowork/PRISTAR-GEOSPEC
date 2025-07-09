@@ -12,11 +12,12 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 # HOW TO USE IT
 Download the docker image and then enable the docker image using the following command in the Windows terminal:
 ```cmd
-docker load -i NAME_OF_FILE.tar
+cd /path/
+docker load -i /path/NAME_OF_FILE.tar
 ```
 Use the following command in the Windows terminal:
 ```cmd
-docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path:/space:rw eo/rarosics:latest
+docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISMA_code/folder:/space:rw eo/rarosics:latest
 ``` 
 Open a browser and enter the following URL:
 ```cmd
