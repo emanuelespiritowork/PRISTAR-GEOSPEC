@@ -10,7 +10,7 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
 # HOW TO USE IT
-Download the docker image and then enable the docker image using the following command in the Windows terminal:
+Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
 ```cmd
 cd /path/
 docker load -i /path/NAME_OF_FILE.tar
@@ -23,4 +23,12 @@ Open a browser and enter the following URL:
 ```cmd
 localhost:8787
 ```
-An Rstudio Server will be loaded. Go to the right panel and click over the 
+An Rstudio Server will be loaded. Go to the right panel and click over the setup:
+
+![image](https://github.com/user-attachments/assets/cce0db0c-e775-450c-8362-9c724885a2c1)
+
+then put inside the box:
+```cmd
+/space/
+```
+
