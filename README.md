@@ -10,8 +10,8 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #Federico Filipponi @ CNR-IGAG for coregistration procedure with Arosics and GDAL
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
-# HOW TO USE IT
-Download PRISMA_code master github repo into a folder that will be the "PRISMA_code folder". Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
+# HOW TO INSTALL IT
+Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the "PRISMA_code folder". Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
 ```cmd
 cd /path/
 docker load -i /path/NAME_OF_FILE.tar
