@@ -71,7 +71,7 @@ prismaread::pr_convert(
 if(product_type == "L1"){
   cloud <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_CLD.tif",basename(in_file))))
   cloud <- terra::subst(cloud, NA, 1)
-  terra::plot(cloud)
+  terra::plot(cloud, range = c(0,1))
   
   full <- terra::rast(paste0(out_folder,gsub(".he5","_HCO_FULL.tif",basename(in_file))))
   
@@ -79,8 +79,8 @@ if(product_type == "L1"){
                                          width = c(3,3), 
                                          type = "box", 
                                          erosion = T, 
-                                         dilation = F,
-                                         erosion_first = F, 
+                                         dilation = T,
+                                         erosion_first = T, 
                                          nt = 1)
   
   terra::plot(cloud_dil)
