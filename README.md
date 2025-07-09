@@ -10,7 +10,7 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
 # HOW TO USE IT
-Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
+Download PRISMA_code master github repo into a folder that will be the "PRISMA_code folder". Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
 ```cmd
 cd /path/
 docker load -i /path/NAME_OF_FILE.tar
