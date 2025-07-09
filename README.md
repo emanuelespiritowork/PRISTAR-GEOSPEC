@@ -11,7 +11,7 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the "PRISMA_code folder". Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
+Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the _PRISMA_code folder_. Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
 ```cmd
 cd /path/
 docker load -i /path/NAME_OF_FILE.tar
@@ -33,6 +33,6 @@ then put inside the box:
 /space/
 ```
 # HOW TO USE IT
-Open the main.R file in the Rstudio server and put the PRISMA file in .he5 format and the S2 reference file in the .tif format in the folder "put_PRISMA_he5_and_S2_tif_here". Click on source and the code will start. 
+Open the _main.R_ file in the Rstudio server and put the PRISMA file in .he5 format and the S2 reference file in the .tif format in the folder _put_PRISMA_he5_and_S2_tif_here_. Click on _source_ and the code will start. 
 # WHAT IF A PROBLEM
 Ask
