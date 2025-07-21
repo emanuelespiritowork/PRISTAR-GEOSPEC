@@ -8,6 +8,7 @@
 # (at your option) any later version.
 import h5py
 import numpy as np
+import os
 
 ### read PRSIMA vaa
 
@@ -87,7 +88,14 @@ def read_PRISMA_vaa(file):
 
 if __name__ == "__main__":
     
-    inputfile = r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here\PRS_L1_STD_OFFL_20240928101742_20240928101746_0001.he5"
+    #inputfile = r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here\PRS_L1_STD_OFFL_20240928101742_20240928101746_0001.he5"
+    for file in os.listdir(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here"):
+        if file.endswith(".he5"):
+            inputfile = os.path.join(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here",file)
+    #for file in os.listdir("/space/put_PRISMA_he5_and_S2_tif_here"):
+    #    if file.endswith(".he5"):
+    #        inputfile = os.path.join("/space/put_PRISMA_he5_and_S2_tif_here",file)
+
 
     angle = read_PRISMA_vaa(inputfile)
     print(angle)
