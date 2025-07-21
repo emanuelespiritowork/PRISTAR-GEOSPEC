@@ -10,6 +10,9 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #Federico Filipponi @ CNR-IGAG for coregistration procedure with Arosics and GDAL
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
+
+# Copyright 2023 Yulun Wu for PRISMA_angle sensor zenith and azimuth.
+
 # HOW TO INSTALL IT
 Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the _PRISMA_code folder_. Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
 ```cmd
