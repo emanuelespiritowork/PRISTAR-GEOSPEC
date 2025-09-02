@@ -7,7 +7,7 @@
 #Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
 #https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
 
-#Lorenzo Busatto @ CNR-IREA for prismaread package 
+#Lorenzo Busetto @ CNR-IREA for prismaread package 
 #https://github.com/IREA-CNR-MI/prismaread
 #distributed under GPL-3.0 license
 
@@ -28,7 +28,9 @@
 #_____________________________________________________________________
 #inputs ----
 #_____________________________________________________________________
-#for normal users: modify only things in this section 
+#for normal users: modify only things in this section
+regridding_option <- F
+smoothing_option <- T
 
 #_____________________________________________________________________
 #setup folders ----
@@ -77,7 +79,8 @@ prismaread::pr_convert(
 #write ATCOR parameters ----
 #_____________________________________________________________________
 if(product_type == "L1" & F){
-  prismaread_angle_file_path <- base::paste0(out_folder,gsub(".he5","_HCO.ang",basename(in_file)))
+  #prismaread_angle_file_path <- base::paste0(out_folder,gsub(".he5","_HCO.ang",basename(in_file)))
+  prismaread_angle_file_path <- "C:/Users/Emanuele/Desktop/PRISMA_code/put_PRISMA_he5_and_S2_tif_here/PRS_L1_STD_OFFL_20240726101410_20240726101414_0001_HCO.ang"
   prismaread_angle_file <- utils::read.table(prismaread_angle_file_path, header =T)
   PRISMA_angle_command <- base::paste0("python"," ",getwd(),"/PRISMA_angle.py")
   sensor_angles <- base::system(PRISMA_angle_command, intern = TRUE) #per questo ci serve h5py in python
@@ -90,6 +93,8 @@ if(product_type == "L1" & F){
 #_____________________________________________________________________
 #work on cloud mask for pixel strips
 if(product_type == "L1"){
+  remotes::install_github("kamapu/spatialist")
+  3
   cloud <- terra::rast(base::paste0(out_folder,base::gsub(".he5","_HCO_CLD.tif",base::basename(in_file))))
   cloud <- terra::subst(cloud, NA, 1)
   terra::plot(cloud, range = c(0,1))
@@ -164,114 +169,126 @@ base::system(GDAL_WARP_run_command)
 #regrid ----
 #_____________________________________________________________________
 #IMPROVE: should I use gdalUtils::gdalwarp or sen2r::gdalwarp_grid??
-
-base::dir.create(regrid_out_folder, recursive = T, showWarnings = F)
-
-if(product_type == "L1"){
-  resample_type <- "near"
-}
-if(product_type == "L2"){
-  resample_type <- "cubicspline"
-}
-
-#NOTE: master image from \\10.0.1.243\projects\2022_ASI-PRIS4VEG\3-DATA\images\PRISMA_img_master\PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b
-master_image_path <- base::paste0(base::getwd(),"/regrid_master_image_52.tif")
-
-coreg_out <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
-
-terra::extend(x = terra::rast(master_image_path),
-              y = terra::rast(coreg_out),
-              fill = 0,
-              filename = base::paste0(regrid_out_folder,"PRISMA_extend.tif"),
-              overwrite = T)
-
-terra::resample(x = terra::rast(coreg_out),
-                y = terra::rast(base::paste0(regrid_out_folder,"PRISMA_extend.tif")),
-                method = resample_type,
-                threads = T,
-                by_util = T,
-                filename = base::paste0(regrid_out_folder,"PRISMA_resample.tif"),
+if(regridding_option){
+  base::dir.create(regrid_out_folder, recursive = T, showWarnings = F)
+  
+  if(product_type == "L1"){
+    resample_type <- "near"
+  }
+  if(product_type == "L2"){
+    resample_type <- "cubicspline"
+  }
+  
+  #NOTE: for Jolanda di Savoia use master image 
+  #from //10.0.1.243/projects/2022_ASI-PRIS4VEG/3-DATA/images/PRISMA_img_master/PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b
+  #for Piacenza the master image is not available yet
+  
+  master_image_dir <- base::paste0(base::getwd(),"/master_image_for_regridding/")
+  
+  master_image_path <- base::list.files(master_image_dir, full.names = T, pattern = "\\.tif$")
+  
+  coreg_out <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
+  
+  terra::extend(x = terra::rast(master_image_path),
+                y = terra::rast(coreg_out),
+                fill = 0,
+                filename = base::paste0(regrid_out_folder,"PRISMA_extend.tif"),
                 overwrite = T)
+  
+  terra::resample(x = terra::rast(coreg_out),
+                  y = terra::rast(base::paste0(regrid_out_folder,"PRISMA_extend.tif")),
+                  method = resample_type,
+                  threads = T,
+                  by_util = T,
+                  filename = base::paste0(regrid_out_folder,"PRISMA_resample.tif"),
+                  overwrite = T)
+  
+  input_image_path <- base::paste0(regrid_out_folder,"PRISMA_resample.tif")
+}else{
+  input_image_path <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
+}
+
 
 #_____________________________________________________________________
 #atcor ----
 #_____________________________________________________________________
 if(product_type == "L1"){
   print("here we need to put atcor")
+  
 }
 
 #_____________________________________________________________________
 #smoothing ----
 #_____________________________________________________________________
-
-if(product_type == "L2"){
-  library(tidytable)
-  
-  base::dir.create(smoothing_out_folder, recursive = T, showWarnings = F)
-  
-  input_image_path <- base::paste0(regrid_out_folder,"PRISMA_resample.tif")
-  
-  smoothing_out <-  base::paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
-  
-  PRISMA_config <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_spectral_configuration.csv")) %>%
-    tidytable::mutate(band_row = tidytable::row_number()) 
-  
-  PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
-    tidytable::filter(BB_SUPER_V3 == 1)
-  
-  input_bad_bands <- PRISMA_bad_bands_table$band
-  
-  input_wvl <- PRISMA_config$center
-  
-  output_wvl <- PRISMA_config %>%
-    tidytable::filter(BND_SEL  == 1) %>%
-    tidytable::pull(center)
-  
-  
-  spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
-    # togliamo le bande cattive
-    ref_valid <- pixel[-bad_bands_pos]
-    wvl_valid <- band_center_input[-bad_bands_pos]
+if(smoothing_option){
+  if(product_type == "L2"){
+    library(tidytable)
     
-    if (base::any(is.na(ref_valid))) {
-      return(base::rep(NA_real_, base::length(band_center_output)))
+    base::dir.create(smoothing_out_folder, recursive = T, showWarnings = F)
+    
+    smoothing_out <-  base::paste0(smoothing_out_folder, "PRISMA_smoothed.tif")
+    
+    PRISMA_config <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_spectral_configuration.csv")) %>%
+      tidytable::mutate(band_row = tidytable::row_number()) 
+    
+    PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
+      tidytable::filter(BB_SUPER_V3 == 1)
+    
+    input_bad_bands <- PRISMA_bad_bands_table$band
+    
+    input_wvl <- PRISMA_config$center
+    
+    output_wvl <- PRISMA_config %>%
+      tidytable::filter(BND_SEL  == 1) %>%
+      tidytable::pull(center)
+    
+    
+    spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
+      # togliamo le bande cattive
+      ref_valid <- pixel[-bad_bands_pos]
+      wvl_valid <- band_center_input[-bad_bands_pos]
+      
+      if (base::any(is.na(ref_valid))) {
+        return(base::rep(NA_real_, base::length(band_center_output)))
+      }
+      
+      sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
+      y_smooth <- stats::predict(sp, x = band_center_output)$y
+      # limitiamo a zero
+      y_smooth[y_smooth < 0] <- 0
+      return(y_smooth)
     }
     
-    sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
-    y_smooth <- stats::predict(sp, x = band_center_output)$y
-    # limitiamo a zero
-    y_smooth[y_smooth < 0] <- 0
-    return(y_smooth)
-  }
-  
-  
-  terra_image <- terra::rast(input_image_path)
-  
-  if(product_type == "L1"){
-    terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
-  }
-  if(product_type == "L2"){
-    terra_image_sub <- terra_image
-  }
-  
-  output_image <- terra::app(
-    x = terra_image_sub,
-    fun = spline_fun,
-    band_center_input = input_wvl, 
-    bad_bands_pos = input_bad_bands, 
-    band_center_output = output_wvl,
-    df=40,
     
-    cores = 7,                     
-    filename = smoothing_out,
-    overwrite = TRUE,
-    wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
-  )
-  
+    terra_image <- terra::rast(input_image_path)
+    
+    if(product_type == "L1"){
+      terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
+    }
+    if(product_type == "L2"){
+      terra_image_sub <- terra_image
+    }
+    
+    output_image <- terra::app(
+      x = terra_image_sub,
+      fun = spline_fun,
+      band_center_input = input_wvl, 
+      bad_bands_pos = input_bad_bands, 
+      band_center_output = output_wvl,
+      df=40,
+      
+      cores = 7,                     
+      filename = smoothing_out,
+      overwrite = TRUE,
+      wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
+    )
+    
+  }
+  if(product_type == "L1"){
+    print("come here when you are done with ATCOR")
+  }
 }
-if(product_type == "L1"){
-  print("come here when you are done with ATCOR")
-}
+
 
 
 
