@@ -29,7 +29,7 @@
 #inputs ----
 #_____________________________________________________________________
 #for normal users: modify only things in this section
-regridding_option <- F
+regridding_option <- T
 smoothing_option <- T
 
 #_____________________________________________________________________
@@ -78,14 +78,23 @@ prismaread::pr_convert(
 #_____________________________________________________________________
 #write ATCOR parameters ----
 #_____________________________________________________________________
-if(product_type == "L1" & F){
+if(product_type == "L1"){
   #prismaread_angle_file_path <- base::paste0(out_folder,gsub(".he5","_HCO.ang",basename(in_file)))
-  prismaread_angle_file_path <- "C:/Users/Emanuele/Desktop/PRISMA_code/put_PRISMA_he5_and_S2_tif_here/PRS_L1_STD_OFFL_20240726101410_20240726101414_0001_HCO.ang"
+  prismaread_angle_file_path <- "/space/put_PRISMA_he5_and_S2_tif_here/PRS_L1_STD_OFFL_20240407101730_20240407101734_0001_HCO.ang"
   prismaread_angle_file <- utils::read.table(prismaread_angle_file_path, header =T)
   PRISMA_angle_command <- base::paste0("python"," ",getwd(),"/PRISMA_angle.py")
   sensor_angles <- base::system(PRISMA_angle_command, intern = TRUE) #per questo ci serve h5py in python
-  prismaread_angle_file$sensor_zenith <- sensor_angles[1]
-  prismaread_angle_file$sensor_azimuth <- sensor_angles[2]
+  
+  sensor_zenith <- strsplit(sensor_angles,",")[[1]][1]
+  sensor_zenith <- gsub('^.', '', sensor_zenith)
+  
+  sensor_azimuth <- strsplit(sensor_angles,",")[[1]][2]
+  sensor_azimuth <- gsub('^.|.$', '', sensor_azimuth)
+  
+  prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
+  prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
+  
+  write.csv(prismaread_angle_file,paste0(out_folder,"ATCOR/all_angles_file.csv"), quote = F, row.names = F)
 }
 
 #_____________________________________________________________________
