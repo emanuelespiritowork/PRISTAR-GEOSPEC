@@ -79,8 +79,7 @@ prismaread::pr_convert(
 #write ATCOR parameters ----
 #_____________________________________________________________________
 if(product_type == "L1"){
-  #prismaread_angle_file_path <- base::paste0(out_folder,gsub(".he5","_HCO.ang",basename(in_file)))
-  prismaread_angle_file_path <- "/space/put_PRISMA_he5_and_S2_tif_here/PRS_L1_STD_OFFL_20240407101730_20240407101734_0001_HCO.ang"
+  prismaread_angle_file_path <- base::paste0(out_folder,base::gsub(".he5","_HCO.ang",base::basename(in_file)))
   prismaread_angle_file <- utils::read.table(prismaread_angle_file_path, header =T)
   PRISMA_angle_command <- base::paste0("python"," ",getwd(),"/PRISMA_angle.py")
   sensor_angles <- base::system(PRISMA_angle_command, intern = TRUE) #per questo ci serve h5py in python
@@ -102,15 +101,13 @@ if(product_type == "L1"){
 #_____________________________________________________________________
 #work on cloud mask for pixel strips
 if(product_type == "L1"){
-  remotes::install_github("kamapu/spatialist")
-  3
   cloud <- terra::rast(base::paste0(out_folder,base::gsub(".he5","_HCO_CLD.tif",base::basename(in_file))))
   cloud <- terra::subst(cloud, NA, 1)
   terra::plot(cloud, range = c(0,1))
   
   full <- terra::rast(base::paste0(out_folder,base::gsub(".he5","_HCO_FULL.tif",base::basename(in_file))))
   
-  cloud_dil <- spatialist::erodil_raster(raster = cloud, #devo aggiungere spatialist al Rstudio server
+  cloud_dil <- spatialist::erodil_raster(raster = cloud, 
                                          width = c(3,3), 
                                          type = "box", 
                                          erosion = T, 
@@ -197,6 +194,7 @@ if(regridding_option){
   master_image_path <- base::list.files(master_image_dir, full.names = T, pattern = "\\.tif$")
   
   coreg_out <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
+  #coreg_out <- base::paste0(coreg_out_folder,"PRS_L1_STD_OFFL_20231004_geocoded_ENVI_atm.bsq")
   
   terra::extend(x = terra::rast(master_image_path),
                 y = terra::rast(coreg_out),
