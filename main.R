@@ -32,7 +32,8 @@
 regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 
 #for expert users:
-procedure_order <- c("read","cloud","coreg","atcor","regrid","smooth")
+#procedure_order <- c("read","cloud","coreg","atcor","regrid","smooth")
+procedure_order <- c("regrid")
 #elements: read, atcor, cloud, coreg, regrid, smooth
 
 #_____________________________________________________________________
@@ -41,6 +42,7 @@ procedure_order <- c("read","cloud","coreg","atcor","regrid","smooth")
 source("/space/functions.R")
 out_folder  <-  "/space/put_PRISMA_he5_and_S2_tif_here/"
 s2_folder <- out_folder
+he5_folder <- out_folder
 base::setwd(base::dirname(out_folder))
 
 he5_file <- base::list.files(path = out_folder, pattern = "\\.he5$", ignore.case = T, full.names = T)
@@ -65,8 +67,8 @@ for(index_of_operations in 1:number_of_operations){
   }
   if(current_operation == "cloud"){
     print("CLOUD")
-    cloud_path <- base::list.files(path = out_folder, pattern = "\\_HCO_CLD.tif", full.names = T)
-    full_path <- base::list.files(path = out_folder, pattern = "\\_HCO_FULL.tif", full.names = T)
+    cloud_path <- base::list.files(path = he5_folder, pattern = "\\_HCO_CLD.tif$", full.names = T)
+    full_path <- base::list.files(path = he5_folder, pattern = "\\_HCO_FULL.tif$", full.names = T)
     if(identical(cloud_path,character(0)) | identical(full_path,character(0))){
       print("ERRORE")
     }else{
@@ -75,7 +77,7 @@ for(index_of_operations in 1:number_of_operations){
   }
   if(current_operation == "atcor"){
     print("ATCOR")
-    angle_file_path <- base::list.files(path = out_folder, pattern = "\\HCO.ang", full.names = T)
+    angle_file_path <- base::list.files(path = he5_folder, pattern = "\\HCO.ang$", full.names = T)
     if(identical(he5_file,character(0)) | identical(angle_file_path,character(0))){
       print("ERRORE")
     }else{
@@ -88,6 +90,7 @@ for(index_of_operations in 1:number_of_operations){
   #procedures that can be swapt
   if(current_operation == "coreg"){
     #chain part
+    print("COREG")
     if(name_of_current_output_folder == ""){
       name_of_current_output_folder <- paste0(out_folder,current_operation)
     }else{
@@ -98,23 +101,29 @@ for(index_of_operations in 1:number_of_operations){
     base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
     
     #coregistration part
-    s2_file <- base::list.files(path = s2_folder, pattern = glob2rx("S2*.tif"), ignore.case = T, full.names = T)
-    coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif", full.names = T)
+    s2_file <- base::list.files(path = s2_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
+    coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T)
     coreg_proj_path <- base::gsub("FULL_CLD","FULL_CLD_proj",coreg_input_path)
     if(identical(coreg_input_path,character(0))){
-      coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif", full.names = T)
+      coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T)
       coreg_proj_path <- base::gsub("FULL","FULL_proj",coreg_input_path)
       if(identical(coreg_input_path,character(0))){
-        coreg_input_path <- base::list.files(path = out_folder, pattern = glob2rx("*.tif"), ignore.case = T, full.names = T)
+        print("I take ELSE")
+        coreg_input_path <- base::list.files(path = out_folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
         coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
         coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
+      }else{
+        print("I take FULL")
       }
+    }else{
+      print("I take FULL_CLD")
     }
     
     coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder)
   }
   if(current_operation == "regrid"){
     #chain part
+    print("REGRID")
     if(name_of_current_output_folder == ""){
       name_of_current_output_folder <- paste0(out_folder,current_operation)
     }else{
@@ -143,12 +152,14 @@ for(index_of_operations in 1:number_of_operations){
     #coreg_out <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
     #coreg_out <- base::paste0(coreg_out_folder,"PRS_L1_STD_OFFL_20220401_geocoded_ENVI_atm.bsq")
     
-    regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif")
+    #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
+    regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
     
     regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path)
   }
   if(current_operation == "smooth"){
     #chain part
+    print("SMOOTH")
     if(name_of_current_output_folder == ""){
       name_of_current_output_folder <- paste0(out_folder,current_operation)
     }else{
@@ -167,7 +178,7 @@ for(index_of_operations in 1:number_of_operations){
       cloud_smooth <- F
     }
     
-    terra_image_path <- base::list.files(out_folder, pattern = "\\.tif", full.names = T)
+    terra_image_path <- base::list.files(out_folder, pattern = "\\.tif$", full.names = T)
     
     smooth_spectra(terra_image_path,smoothing_out,cloud_smooth)
   }
