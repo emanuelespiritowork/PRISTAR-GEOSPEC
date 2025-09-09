@@ -149,11 +149,8 @@ for(index_of_operations in 1:number_of_operations){
     
     master_image_path <- base::list.files(base::paste0(base::getwd(),"/master_image_for_regridding/"), full.names = T, pattern = "\\.tif$")
     
-    #coreg_out <- base::paste0(coreg_out_folder,"prs_crs_translate_warp.tif")
-    #coreg_out <- base::paste0(coreg_out_folder,"PRS_L1_STD_OFFL_20220401_geocoded_ENVI_atm.bsq")
-    
-    #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
-    regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
+    regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
+    #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
     
     regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path)
   }
