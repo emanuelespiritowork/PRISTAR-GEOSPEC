@@ -1,4 +1,4 @@
-# PRISMA-code
+# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral Refinement
 PRISMA reading, masking, coregistration, smoothing and regriding
 
 #Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
@@ -23,9 +23,9 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #distributed under GPL-3.0 license
 
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the _PRISMA_code folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
+Download docker from https://www.docker.com/products/docker-desktop/. Download PRISTAR-GEOSPEC master github repo into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
 ```cmd
-docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISMA_code/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
+docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
 ``` 
 where you insert version number where above is #.#. Open a browser and enter the following URL:
 ```cmd
