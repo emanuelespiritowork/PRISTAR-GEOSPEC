@@ -23,16 +23,11 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #distributed under GPL-3.0 license
 
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the _PRISMA_code folder_. Download the docker image from dockerhub and then enable the docker image using the following command in the Windows terminal:
+Download docker from https://www.docker.com/products/docker-desktop/. Download PRISMA_code master github repo into a folder that will be the _PRISMA_code folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
 ```cmd
-cd /path/
-docker load -i /path/NAME_OF_FILE.tar
-```
-Use the following command in the Windows terminal:
-```cmd
-docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISMA_code/folder:/space:rw eo/rarosics:latest
+docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISMA_code/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
 ``` 
-Open a browser and enter the following URL:
+where you insert version number where above is #.#. Open a browser and enter the following URL:
 ```cmd
 localhost:8787
 ```
