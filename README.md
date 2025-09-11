@@ -1,4 +1,4 @@
-# PRISMA-code
+# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral Refinement
 PRISMA reading, masking, coregistration, smoothing and regriding
 
 #Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
