@@ -33,7 +33,7 @@ regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 
 #for expert users:
 #procedure_order <- c("read","cloud","coreg","atcor","regrid","smooth")
-procedure_order <- c("regrid")
+procedure_order <- c("crop","smooth")
 #elements: read, atcor, cloud, coreg, regrid, smooth
 
 #_____________________________________________________________________
@@ -154,6 +154,31 @@ for(index_of_operations in 1:number_of_operations){
     
     regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path)
   }
+  if(current_operation == "crop"){
+    #chain part
+    print("CROP")
+    if(name_of_current_output_folder == ""){
+      name_of_current_output_folder <- paste0(out_folder,current_operation)
+    }else{
+      out_folder <- name_of_current_output_folder
+      name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
+    }
+    
+    base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+    
+    #crop part
+    
+    #NOTE: for Jolanda di Savoia use master image 
+    #from //10.0.1.243/projects/2022_ASI-PRIS4VEG/3-DATA/images/PRISMA_img_master/PRS_L2D_STD_20200407_HCO_JDS_EXT_FULL_30m_smooth_v1_170b
+    #for Piacenza the master image is not available yet
+    
+    master_image_path <- base::list.files(base::paste0(base::getwd(),"/master_image_for_regridding/"), full.names = T, pattern = "\\.tif$")
+    
+    crop_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
+    #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
+    
+    crop_function(master_image_path, name_of_current_output_folder, crop_input_path)
+  }
   if(current_operation == "smooth"){
     #chain part
     print("SMOOTH")
@@ -177,7 +202,72 @@ for(index_of_operations in 1:number_of_operations){
     
     terra_image_path <- base::list.files(out_folder, pattern = "\\.tif$", full.names = T)
     
-    smooth_spectra(terra_image_path,smoothing_out,cloud_smooth)
+    #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
+    #smooth_spectra(terra_image_path,smoothing_out,cloud_smooth)
+    
+    library(tidytable)
+    
+    PRISMA_config <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_spectral_configuration.csv")) %>%
+      tidytable::mutate(band_row = tidytable::row_number()) 
+    
+    PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
+      tidytable::filter(BB_SUPER_V3 == 1)
+    
+    input_bad_bands <- PRISMA_bad_bands_table$band
+    
+    input_wvl <- PRISMA_config$center
+    
+    output_wvl <- PRISMA_config %>%
+      tidytable::filter(BND_SEL  == 1) %>%
+      tidytable::pull(center)
+    
+    #print("Define spline function")
+    
+    spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
+      # togliamo le bande cattive
+      ref_valid <- pixel[-bad_bands_pos]
+      wvl_valid <- band_center_input[-bad_bands_pos]
+      
+      if (base::any(is.na(ref_valid))) {
+        return(base::rep(NA_real_, base::length(band_center_output)))
+      }
+      
+      sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
+      y_smooth <- stats::predict(sp, x = band_center_output)$y
+      # limitiamo a zero
+      y_smooth[y_smooth < 0] <- 0
+      return(y_smooth)
+    }
+    
+    #print("Read terra image")
+    
+    terra_image <- terra::rast(terra_image_path)
+    
+    if(cloud_smooth){
+      terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
+    }else{
+      terra_image_sub <- terra_image
+    }
+    
+    #print("Apply smoothing")
+    
+    #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
+    
+    #terra::gdalCache(1000000)
+    
+    terra::app(
+      x = terra_image_sub,
+      fun = spline_fun,
+      band_center_input = input_wvl, 
+      bad_bands_pos = input_bad_bands, 
+      band_center_output = output_wvl,
+      df=40,
+      
+      cores = 7,                     
+      filename = smoothing_out,
+      overwrite = TRUE,
+      wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
+    )
   }
   
 }

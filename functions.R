@@ -146,10 +146,19 @@ regrid_function <- function(master_image_path, name_of_current_output_folder, re
 }
 
 #_____________________________________________________________________
+#crop ----
+#_____________________________________________________________________
+crop_function <- function(master_image_path, name_of_current_output_folder, crop_input_path){
+  terra::crop(x = terra::rast(crop_input_path),
+              y = terra::rast(master_image_path),
+              filename = base::paste0(name_of_current_output_folder,"/PRISMA_crop.tif"),
+              overwrite = T)
+}
+
+#_____________________________________________________________________
 #smooth ----
 #_____________________________________________________________________
 smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
-  
   PRISMA_config <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_spectral_configuration.csv")) %>%
     tidytable::mutate(band_row = tidytable::row_number()) 
   
@@ -164,6 +173,7 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
     tidytable::filter(BND_SEL  == 1) %>%
     tidytable::pull(center)
   
+  print("Define spline function")
   
   spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
     # togliamo le bande cattive
@@ -181,6 +191,7 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
     return(y_smooth)
   }
   
+  print("Read terra image")
   
   terra_image <- terra::rast(terra_image_path)
   
@@ -190,7 +201,13 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
     terra_image_sub <- terra_image
   }
   
-  output_image <- terra::app(
+  print("Apply smoothing")
+  
+  terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
+  
+  terra::gdalCache(1000000)
+  
+  terra::app(
     x = terra_image_sub,
     fun = spline_fun,
     band_center_input = input_wvl, 
@@ -203,5 +220,4 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
     overwrite = TRUE,
     wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
   )
-  
 }
