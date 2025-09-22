@@ -328,8 +328,8 @@ if compute_gcp == True:
     # set coregistration arguments
     kwargs = {
         'grid_res'     : 10,#modificato
-        'window_size'  : (128,128),#modificato
-        'max_shift'    : 10,#modificato,
+        'window_size'  : (1280,1280),#modificato
+        'max_shift'    : 1000,#modificato (era 10 per Katy),
         'max_points'   : 100,
         'resamp_alg_deshift': "nearest",#non c'era
         'resamp_alg_calc': 'nearest',#non c'era
@@ -465,6 +465,12 @@ if compute_gcp == True:
 
             # export to text file
             GCP_table_resampled.to_csv(options.output_gcp_resampled, header=False, index=False, sep=" ")
+    # (ema) export coregistration points reliability
+    CRL.view_CoRegPoints(figsize = (15,15), attribute2plot = "ABS_SHIFT", exclude_fillVals=False,hide_filtered=False,
+    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig.png"))
+
+    CRL.view_CoRegPoints(figsize = (15,15), shapes2plot = "points", backgroundIm = "tgt",
+    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig2.png"))
 
     # export coregistration information to json file
     if options.output_cor_info != None:

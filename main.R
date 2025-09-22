@@ -30,10 +30,11 @@
 #_____________________________________________________________________
 #for normal users: modify only things in this section
 regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
+full_230_bands <- T
 
 #for expert users:
-#procedure_order <- c("read","cloud","coreg","atcor","regrid","smooth")
-procedure_order <- c("crop","smooth")
+#procedure_order <- c("read","cloud","coreg","atcor","regrid","crop","smooth")
+procedure_order <- c("coreg")
 #elements: read, atcor, cloud, coreg, regrid, smooth
 
 #_____________________________________________________________________
@@ -217,8 +218,15 @@ for(index_of_operations in 1:number_of_operations){
     
     input_wvl <- PRISMA_config$center
     
+    selection_vector <- 1
+    
+    if(full_230_bands){
+      selection_vector <- c(0,1)
+    }
+    
+    #which output bands
     output_wvl <- PRISMA_config %>%
-      tidytable::filter(BND_SEL  == 1) %>%
+      tidytable::filter(BND_SEL %in% selection_vector) %>%
       tidytable::pull(center)
     
     #print("Define spline function")
