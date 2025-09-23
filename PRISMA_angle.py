@@ -94,7 +94,7 @@ if __name__ == "__main__":
     #        inputfile = os.path.join(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here",file)
 
     for file in os.listdir("/space/put_PRISMA_he5_and_S2_tif_here"):
-        if file.endswith(".he5"):
+        if file.endswith(".he5") & file.startswith("PRS"):
             inputfile = os.path.join("/space/put_PRISMA_he5_and_S2_tif_here",file)
 
 

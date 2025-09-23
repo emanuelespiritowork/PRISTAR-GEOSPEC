@@ -34,7 +34,7 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("inject","read")
+procedure_order <- c("atcor")
 #elements: read, atcor, cloud, coreg, regrid, smooth
 
 #_____________________________________________________________________
