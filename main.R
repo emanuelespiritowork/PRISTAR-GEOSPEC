@@ -33,8 +33,8 @@ regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 full_230_bands <- T
 
 #for expert users:
-#procedure_order <- c("read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("coreg")
+#procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
+procedure_order <- c("inject","read")
 #elements: read, atcor, cloud, coreg, regrid, smooth
 
 #_____________________________________________________________________
@@ -46,8 +46,12 @@ s2_folder <- out_folder
 he5_folder <- out_folder
 base::setwd(base::dirname(out_folder))
 
-he5_file <- base::list.files(path = out_folder, pattern = "\\.he5$", ignore.case = T, full.names = T)
-product_type <- base::substring(base::basename(he5_file),5,6)
+he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
+if(!grepl("injected",base::basename(he5_file))){
+  product_type <- base::substring(base::basename(he5_file),5,6)
+}else{
+  product_type <- "L0"
+}
 
 #_____________________________________________________________________
 #work ----
@@ -58,6 +62,23 @@ for(index_of_operations in 1:number_of_operations){
   current_operation <- procedure_order[index_of_operations]
   
   #procedures that are the start of a sequence
+  if(current_operation == "inject"){
+    print("INJECT")
+    if(identical(he5_file,character(0))){
+      print("ERRORE")
+    }else{
+      injection_command <- base::paste0("python"," ",getwd(),"/Injection_L0_in_L1_cubes.py")
+      base::system(injection_command, intern = TRUE)
+    }
+    
+    he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
+    if(!grepl("injected",base::basename(he5_file))){
+      product_type <- base::substring(base::basename(he5_file),5,6)
+    }else{
+      product_type <- "L0"
+    }
+    
+  }
   if(current_operation == "read"){
     print("READ")
     if(identical(he5_file,character(0))){

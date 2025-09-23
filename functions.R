@@ -12,6 +12,10 @@ prismaread_function <- function(product_type, he5_file){
     CLOUD <- F
     ATCOR <- F
   }
+  if(product_type == "L0"){
+    CLOUD <- F
+    ATCOR <- T
+  }
   
   prismaread::pr_convert(
     ANGLES = T,
