@@ -97,8 +97,8 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
   
   # set arguments
   single_band_reference_image <- s2_file
-  single_band_image_to_coregister <- base::list.files(base::dirname(s2_file),"\\proj_52.tif$", full.names = T)
-  multiband_image_to_coregister <- base::list.files(base::dirname(s2_file),"\\proj.tif$", full.names = T)
+  single_band_image_to_coregister <- base::list.files(base::dirname(coreg_input_path),"\\proj_52.tif$", full.names = T)
+  multiband_image_to_coregister <- base::list.files(base::dirname(coreg_input_path),"\\proj.tif$", full.names = T)
   arosics_local_path <- base::paste0("python"," ",base::getwd(),"/arosics_local.py")
   output_directory <- coreg_out_folder
   output_file <- base::paste0(coreg_out_folder,"/prs_crs_translate_warp.tif")

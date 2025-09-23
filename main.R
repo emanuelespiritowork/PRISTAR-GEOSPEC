@@ -121,6 +121,15 @@ for(index_of_operations in 1:number_of_operations){
     }
     
     coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder)
+    
+    base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
+    
+    coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"),paste0(name_of_current_output_folder,"/validation"))
+    
+    file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"))
+    file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj_52.tif"))
+    file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
+    
   }
   if(current_operation == "regrid"){
     #chain part

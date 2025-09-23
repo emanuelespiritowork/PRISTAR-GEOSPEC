@@ -467,11 +467,19 @@ if compute_gcp == True:
             GCP_table_resampled.to_csv(options.output_gcp_resampled, header=False, index=False, sep=" ")
     # (ema) export coregistration points reliability
     CRL.view_CoRegPoints(figsize = (15,15), attribute2plot = "ABS_SHIFT", exclude_fillVals=False,hide_filtered=False,
-    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig.png"))
+    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig_pre_1.png"))
 
     CRL.view_CoRegPoints(figsize = (15,15), shapes2plot = "points", backgroundIm = "tgt",
-    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig2.png"))
+    savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig_pre_2.png"))
+    
+    #CRL_after_corr = COREG_LOCAL(options.reference,os.path.join(os.path.dirname(options.output_cor_info),"prs_crs_translate_warp.tif"),**kwargs)
 
+    #CRL_after_corr.view_CoRegPoints(figsize = (15,15), attribute2plot = "ABS_SHIFT", exclude_fillVals=False,hide_filtered=False,
+    #savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig_post_1.png"))
+
+    #CRL_after_corr.view_CoRegPoints(figsize = (15,15), shapes2plot = "points", backgroundIm = "tgt",
+    #savefigPath = os.path.join(os.path.dirname(options.output_cor_info),"fig_post_2.png"))
+    
     # export coregistration information to json file
     if options.output_cor_info != None:
 
