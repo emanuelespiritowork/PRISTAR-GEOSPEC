@@ -34,8 +34,8 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("atcor")
-#elements: read, atcor, cloud, coreg, regrid, smooth
+procedure_order <- c("ortho")
+#elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
 #setup folders ----
@@ -47,10 +47,15 @@ he5_folder <- out_folder
 base::setwd(base::dirname(out_folder))
 
 he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
-if(!grepl("injected",base::basename(he5_file))){
-  product_type <- base::substring(base::basename(he5_file),5,6)
+if(!identical(he5_file,character(0)))
+{
+  if(grepl("injected",base::basename(he5_file))){
+    product_type <- "L0"
+  }else{
+    product_type <- base::substring(base::basename(he5_file),5,6)
+  }
 }else{
-  product_type <- "L0"
+  product_type <- base::substring(base::basename(he5_file),5,6)
 }
 
 #_____________________________________________________________________
@@ -58,6 +63,8 @@ if(!grepl("injected",base::basename(he5_file))){
 #_____________________________________________________________________
 number_of_operations <- length(procedure_order)
 name_of_current_output_folder <- ""
+#current_operation <- procedure_order[1]
+#coreg_out_folder <- name_of_current_output_folder
 for(index_of_operations in 1:number_of_operations){
   current_operation <- procedure_order[index_of_operations]
   
@@ -110,9 +117,9 @@ for(index_of_operations in 1:number_of_operations){
   }
   
   #procedures that can be swapt
-  if(current_operation == "coreg"){
+  if(current_operation == "coreg" | current_operation == "ortho"){
     #chain part
-    print("COREG")
+    print("COREG/ORTHO")
     if(name_of_current_output_folder == ""){
       name_of_current_output_folder <- paste0(out_folder,current_operation)
     }else{
@@ -121,6 +128,14 @@ for(index_of_operations in 1:number_of_operations){
     }
     
     base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+    base::dir.create(paste0(out_folder,"DEM"), recursive = T, showWarnings = F)
+    
+    dem <- F
+    dem_path <- NULL
+    if(!identical(list.files(paste0(out_folder,"DEM")),character(0))){
+      dem <- T
+      dem_path <- list.files(paste0(out_folder,"DEM"), pattern = "\\.tif$", ignore.case = T, full.names = T)
+    }
     
     #coregistration part
     s2_file <- base::list.files(path = s2_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
@@ -141,15 +156,20 @@ for(index_of_operations in 1:number_of_operations){
       print("I take FULL_CLD")
     }
     
-    coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder)
+    #if I do not want to use dem, do not use it!
+    if(current_operation == "coreg"){
+      dem <- F
+    }
     
-    base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
+    coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder,dem,dem_path,product_type)
     
-    coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"),paste0(name_of_current_output_folder,"/validation"))
+    #base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
     
-    file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"))
-    file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj_52.tif"))
-    file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
+    #coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path)
+    
+    #file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"))
+    #file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj_52.tif"))
+    #file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
     
   }
   if(current_operation == "regrid"){

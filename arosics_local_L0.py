@@ -328,8 +328,8 @@ if compute_gcp == True:
     # set coregistration arguments
     kwargs = {
         'grid_res'     : 1,#modificato(era 10 per Katy)
-        'window_size'  : (128,128),#modificato(era (128,128) per Katy)
-        'max_shift'    : 10,#modificato (era 10 per Katy),
+        'window_size'  : (1280,1280),#modificato(era (128,128) per Katy)
+        'max_shift'    : 1000,#modificato (era 10 per Katy),
         'max_points'   : 10000,#non è obbligatorio(era 100 per Katy anche se poi ne appaiono molti di più in validazione)
         'resamp_alg_deshift': "nearest",#non c'era
         'resamp_alg_calc': 'nearest',#non c'era
