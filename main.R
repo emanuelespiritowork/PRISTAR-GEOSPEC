@@ -12,6 +12,7 @@
 #distributed under GPL-3.0 license
 
 #Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL
+#and for the maintanance of the Docker Container and any hardware-related solution
 #https://github.com/GFZ/arosics
 #distributed under Apache-2.0 license
 #https://gdal.org/en/stable

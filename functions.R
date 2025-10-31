@@ -193,6 +193,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     rm(s2_raster)
     invisible(gc())
     terra::gdalCache(10000000000000)
+    terra::terraOptions(memmax = 24, memfrac = 0.9)
     s2_grid_df <- terra::extract(dem_projected, s2_df, xy = T) %>% select(-ID) %>% 
       rename(z = colnames(.)[colnames(.) != "x" & colnames(.) != "y"])
     rm(s2_df)
@@ -250,7 +251,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     #                            resolution = c(30,30), nlyrs = 230)
     
     #with x y distribution
-    quantile <- 0.02
+    quantile <- 0.01
     nlyrs <- terra::nlyr(prisma_projected)
     empty_raster <- terra::rast(crs = target_epsg, extent = terra::ext(quantile(s2_grid_sampled_dt$x,quantile),quantile(s2_grid_sampled_dt$x,1-quantile),quantile(s2_grid_sampled_dt$y,quantile),quantile(s2_grid_sampled_dt$y,1-quantile)),
                                 resolution = terra::res(prisma_projected), nlyrs = nlyrs)

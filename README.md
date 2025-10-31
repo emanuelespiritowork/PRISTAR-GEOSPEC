@@ -12,6 +12,7 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #distributed under GPL-3.0 license
 
 #Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL
+#and for the maintanance of the Docker Container and any hardware-related solution
 #https://github.com/GFZ/arosics
 #distributed under Apache-2.0 license
 #https://gdal.org/en/stable
@@ -28,9 +29,9 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 # HOW TO INSTALL IT
 Download docker from https://www.docker.com/products/docker-desktop/. Download PRISTAR-GEOSPEC master github repo into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
 ```cmd
-docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
+docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 --memory="24576m" --memory-swap="24576m" -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
 ``` 
-where you insert version number where above is #.#. Open a browser and enter the following URL:
+where you insert version number where above is #.# and 24576 stands for the amount of RAM to be used (24GB in this case). Open a browser and enter the following URL:
 ```cmd
 localhost:8787
 ```
