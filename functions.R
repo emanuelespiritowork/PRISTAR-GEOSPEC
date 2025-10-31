@@ -98,10 +98,10 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
   terra::writeRaster(prisma_projected, 
                      coreg_proj_path,
                      overwrite = T)
-  prisma_b52 <- terra::subset(x = prisma_projected, subset = 52)
-  terra::writeRaster(prisma_b52, 
-                     base::gsub("proj","proj_52",coreg_proj_path),
-                     overwrite = T)
+  terra::subset(x = prisma_projected, 
+                subset = 52, 
+                filename = base::gsub("proj","proj_52",coreg_proj_path), 
+                overwrite = T)
   
   # set arguments
   single_band_reference_image <- s2_file
@@ -114,10 +114,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
   }
   
   output_directory <- coreg_out_folder
-  output_file <- base::paste0(output_directory,"/prs_crs_translate_warp.tif")
-  
-  base::dir.create(output_directory, recursive = T, showWarnings = F)
-  
+
   # setup AROSICS run command
   #IMPROVE: potrei usare AROSICS da riga di comando?
   arosics_run_command <- base::paste(arosics_local_path, "-v -r", single_band_reference_image, "-t", single_band_image_to_coregister, "-l", base::normalizePath(path=base::paste(output_directory, "/", "AROSICS_coregistration_info.json", sep=""), winslash="/", mustWork=FALSE), "-m", base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), "-g", base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE), sep=" ")
@@ -193,15 +190,21 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     library(tidytable)
     s2_df <- as.data.frame(s2_raster, xy =T)[,c(1,2)] %>% mutate(flag = row_number() %% 9) %>%
       filter(flag == 0) %>% select(-flag) %>% as.data.frame() 
+    rm(s2_raster)
+    invisible(gc())
     terra::gdalCache(10000000000000)
     s2_grid_df <- terra::extract(dem_projected, s2_df, xy = T) %>% select(-ID) %>% 
-      rename(z = Senales_2024_02)
+      rename(z = colnames(.)[colnames(.) != "x" & colnames(.) != "y"])
+    rm(s2_df)
+    invisible(gc())
     s2_grid <- s2_grid_df %>% mutate(i = predicted_i(x,y,z), j = predicted_j(x,y,z))
+    rm(s2_grid_df)
+    invisible(gc())
     
     #filter the s2_grid by extent in the PRISMA image back
     #then sample the PRISMA image back using nearest neighbor
-    PRISMA_grid_x_range <- nrow(prisma_b52)
-    PRISMA_grid_y_range <- ncol(prisma_b52)
+    PRISMA_grid_x_range <- nrow(prisma_projected)
+    PRISMA_grid_y_range <- ncol(prisma_projected)
     s2_grid_filtered <- s2_grid %>% 
       mutate(i = round(i), j = round(j)) %>%
       filter(i > 0 & j > 0 & i < PRISMA_grid_x_range & j < PRISMA_grid_y_range) %>%
@@ -211,6 +214,9 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
       select(-x,-y,-z) %>%
       rename(z = z_mean, x = x_mean, y = y_mean) %>%
       unique()
+    rm(s2_grid)
+    invisible(gc())
+    
     
     saveRDS(s2_grid_filtered, paste0(coreg_out_folder,"/s2_grid_filtered.rds"))
     #as.numeric(prisma_projected[raster::cellFromRowCol(prisma_projected, c(800,700,600), c(800,700,600))])
@@ -244,7 +250,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     #                            resolution = c(30,30), nlyrs = 230)
     
     #with x y distribution
-    quantile <- 0.01
+    quantile <- 0.02
     nlyrs <- terra::nlyr(prisma_projected)
     empty_raster <- terra::rast(crs = target_epsg, extent = terra::ext(quantile(s2_grid_sampled_dt$x,quantile),quantile(s2_grid_sampled_dt$x,1-quantile),quantile(s2_grid_sampled_dt$y,quantile),quantile(s2_grid_sampled_dt$y,1-quantile)),
                                 resolution = terra::res(prisma_projected), nlyrs = nlyrs)
@@ -252,9 +258,8 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     #empty_raster <- terra::rast(crs = target_epsg, extent = terra::ext(640000,645000,5170000,5180000),
     #                            resolution = c(30,30), nlyrs = 230)
     s2_grid_sampled_vect <- terra::vect(s2_grid_sampled_dt, crs = target_epsg, geom = c("x","y"))
-    end <- nlyrs+2
     
-    names <- colnames(s2_grid_sampled_dt)[3:end]#UPDATE: use not column position but names
+    names <- colnames(s2_grid_sampled_dt)[colnames(s2_grid_sampled_dt) != "x" & colnames(s2_grid_sampled_dt) != "y"]#UPDATE: use not column position but names
     rm(s2_grid_sampled_dt)
     invisible(gc())
     output_raster <- terra::rasterize(s2_grid_sampled_vect, empty_raster, field = names)
@@ -266,6 +271,8 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     #fill NA with bilinear value
     output_focal <- terra::focal(output_raster, w=3, fun=mean, na.policy="only", na.rm=T) #FIX: use focal only if it finds at least two values 
     output_focal_again <- terra::focal(output_focal, w=3, fun=mean, na.policy="only", na.rm=T)
+    rm(output_focal)
+    invisible(gc())
     terra::writeRaster(output_focal_again, paste0(coreg_out_folder,"/raster_focal.tif"), overwrite = T)
     
     #s2_grid_x_range <- nrow(s2_raster)
@@ -276,6 +283,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
       #raster::xyFromCell(dem_projected, raster::cellFromRowCol(dem_projected, 800, 800))
     
   }else{
+    output_file <- base::paste0(output_directory,"/prs_crs_translate_warp.tif")
     # create VRT with GCP
     GDAL_VRT_run_command <- base::paste("gdal_translate -q -of VRT", gcp_args, multiband_image_to_coregister, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=FALSE), sep=" ")
     writeLines(GDAL_VRT_run_command, base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))

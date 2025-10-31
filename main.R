@@ -64,7 +64,6 @@ if(!identical(he5_file,character(0)))
 number_of_operations <- length(procedure_order)
 name_of_current_output_folder <- ""
 #current_operation <- procedure_order[1]
-#coreg_out_folder <- name_of_current_output_folder
 for(index_of_operations in 1:number_of_operations){
   current_operation <- procedure_order[index_of_operations]
   
@@ -130,12 +129,6 @@ for(index_of_operations in 1:number_of_operations){
     base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
     base::dir.create(paste0(out_folder,"DEM"), recursive = T, showWarnings = F)
     
-    dem <- F
-    dem_path <- NULL
-    if(!identical(list.files(paste0(out_folder,"DEM")),character(0))){
-      dem <- T
-      dem_path <- list.files(paste0(out_folder,"DEM"), pattern = "\\.tif$", ignore.case = T, full.names = T)
-    }
     
     #coregistration part
     s2_file <- base::list.files(path = s2_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
@@ -156,10 +149,32 @@ for(index_of_operations in 1:number_of_operations){
       print("I take FULL_CLD")
     }
     
+    #DEM part
+    dem <- F
+    dem_path <- NULL
+    target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
+    if(!identical(list.files(paste0(out_folder,"DEM")),character(0))){
+      dem <- T
+      if(!identical(list.files(paste0(out_folder,"DEM"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T), character(0))){
+        dem_path <- list.files(paste0(out_folder,"DEM"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T)
+      }else{
+        dem_path_not_projected <- list.files(paste0(out_folder,"DEM"), pattern = "\\.tif$", ignore.case = T, full.names = T)
+        dem_projected <- terra::project(x = terra::rast(dem_path_not_projected),
+                                        y = target_epsg,
+                                        method = "near")
+        file.remove(dem_path_not_projected)
+        dem_path <- gsub("\\.tif","\\_projected.tif",dem_path_not_projected)
+        terra::writeRaster(dem_projected, dem_path)
+      }
+      
+    }
+    
     #if I do not want to use dem, do not use it!
     if(current_operation == "coreg"){
       dem <- F
     }
+    
+    #coreg_out_folder <- name_of_current_output_folder
     
     coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder,dem,dem_path,product_type)
     
