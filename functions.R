@@ -245,6 +245,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     
     #with x y distribution
     quantile <- 0.01
+    nlyrs <- terra::nlyr(prisma_projected)
     empty_raster <- terra::rast(crs = target_epsg, extent = terra::ext(quantile(s2_grid_sampled_dt$x,quantile),quantile(s2_grid_sampled_dt$x,1-quantile),quantile(s2_grid_sampled_dt$y,quantile),quantile(s2_grid_sampled_dt$y,1-quantile)),
                                 resolution = terra::res(prisma_projected), nlyrs = nlyrs)
     
