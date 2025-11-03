@@ -86,8 +86,8 @@ cloud_mask <- function(cloud_path, full_path){
 #coreg ----
 #_____________________________________________________________________
 coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_out_folder,dem,dem_path,product_type){
-  print("DEM is")
-  print(dem)
+  #print("DEM is")
+  #print(dem)
   #create single layer image to coregister and change crs to EPSG:32632
   target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
   
@@ -267,7 +267,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     rm(s2_grid_sampled_vect)
     rm(empty_raster)
     invisible(gc())
-    terra::writeRaster(output_raster, paste0(coreg_out_folder,"/raster_not_focal.tif"), overwrite = T)
+    #terra::writeRaster(output_raster, paste0(coreg_out_folder,"/raster_not_focal.tif"), overwrite = T)
     
     #fill NA with bilinear value
     output_focal <- terra::focal(output_raster, w=3, fun=mean, na.policy="only", na.rm=T) #FIX: use focal only if it finds at least two values 
@@ -275,6 +275,8 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     rm(output_focal)
     invisible(gc())
     terra::writeRaster(output_focal_again, paste0(coreg_out_folder,"/raster_focal.tif"), overwrite = T)
+    rm(output_focal_again)
+    invisible(gc())
     
     #s2_grid_x_range <- nrow(s2_raster)
     #s2_grid_y_range <- ncol(s2_raster)
@@ -282,7 +284,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
     #s2_grid_list_of_cells <- lapply(1:s2_grid_number_of_cells, function(pixel){raster::xyFromCell(s2_raster,pixel)})
     
       #raster::xyFromCell(dem_projected, raster::cellFromRowCol(dem_projected, 800, 800))
-    
+    #file.remove(paste0(coreg_out_folder,"/raster_not_focal.tif"))
   }else{
     output_file <- base::paste0(output_directory,"/prs_crs_translate_warp.tif")
     # create VRT with GCP
