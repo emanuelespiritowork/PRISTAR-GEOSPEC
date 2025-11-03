@@ -1,5 +1,15 @@
 # PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral Refinement
-PRISMA reading, masking, coregistration, smoothing and regriding
+
+PRISTAR-GEOSPEC tool can help you in:
+- reading L0, L1 and L2C PRISMA products;
+- generate cloud mask for PRISMA;
+- read sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure); 
+- orthoprojection of PRISMA with DEM and Sentinel-2 image using AROSICS and Rational Polynomial Function (RPF);
+- coregistration of PRISMA to Sentinel-2 image using AROSICS and gdalwarp;
+- spectral smoothing with all 230 bands or with bad bands removal;
+- regriding the PRISMA image to a master PRISMA image.
+
+# Credits
 
 #Emanuele Spirito @ CNR-IREA 
 #Author
@@ -43,6 +53,38 @@ then put inside the box:
 /space/
 ```
 # HOW TO USE IT
-Open the _main.R_ file in the Rstudio server and put the PRISMA file in .he5 format and the S2 reference file in the .tif format in the folder _put_PRISMA_he5_and_S2_tif_here_. Click on _source_ and the code will start. 
+Use case:
+1) you want read a L0 PRISMA image. Put _data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5_ and _data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5_ into _put_PRISMA_he5_and_S2_tif_here_ folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 products and put the .he5 file inside the _put_PRISMA_he5_and_S2_tif_here_ folder. NB: that file will be overridden so keep a copy of it. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+```r
+   procedure_order <- c("inject","read")
+```
+2) you want to read a L1 or L2C PRISMA image in .he5 format. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+```r
+   procedure_order <- c("read")
+```
+3) you want to read, generate cloud mask and angle file. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+```r
+   procedure_order <- c("read","cloud","atcor")
+```
+4) you want to read and coregister your PRISMA image to a Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+```r
+   procedure_order <- c("read","coreg")
+```
+5) you want to read and orthoproject your PRISMA image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your DEM image into .tif format into _DEM_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+```r
+   procedure_order <- c("read","ortho")
+```
+6) you want to read, coregister your PRISMA image and spectral smooth with bad bands removal. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and put
+```r
+full_230_bands <- F
+procedure_order <- c("read","coreg","smooth")
+```
+7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Then open _main.R_ file in Rstudio server and put
+```r
+procedure_order <- c("read","coreg","regrid")
+```
+
+
+Click on _source_ and the code will start. 
 # WHAT IF A PROBLEM
 Ask
