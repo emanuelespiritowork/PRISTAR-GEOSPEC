@@ -1,4 +1,4 @@
-# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral Refinement
+# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral refinement
 
 PRISTAR-GEOSPEC tool can help you in:
 - reading L0, L1 and L2C PRISMA products;
@@ -40,7 +40,11 @@ Download docker from https://www.docker.com/products/docker-desktop/. Download P
 ```cmd
 docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 --memory="24576m" --memory-swap="24576m" -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
 ``` 
-where you insert version number where above is #.# and 24576 stands for the amount of RAM to be used (24GB in this case). Open a browser and enter the following URL:
+where you insert version number where above is #.# and 24576 stands for the amount of RAM to be used (24GB in this case). Then a UNIX console will be opened and you can start your Docker writing:
+```cmd
+./init
+``` 
+Open a browser and enter the following URL:
 ```cmd
 localhost:8787
 ```
