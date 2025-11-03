@@ -1,4 +1,4 @@
-# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral Refinement
+# PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral refinement
 
 PRISTAR-GEOSPEC tool can help you in:
 - reading L0, L1 and L2C PRISMA products;
