@@ -4,15 +4,14 @@ PRISMA reading, masking, coregistration, smoothing and regriding
 #Emanuele Spirito @ CNR-IREA 
 #Author
 
-#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
+#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for reading L0 products
 #https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
 
 #Lorenzo Busetto @ CNR-IREA for prismaread package 
 #https://github.com/IREA-CNR-MI/prismaread
 #distributed under GPL-3.0 license
 
-#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL
-#and for the maintanance of the Docker Container and any hardware-related solution
+#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintanance of the Docker Container and any hardware-related solution
 #https://github.com/GFZ/arosics
 #distributed under Apache-2.0 license
 #https://gdal.org/en/stable
