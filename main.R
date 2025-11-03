@@ -35,7 +35,7 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("ortho")
+procedure_order <- c("read")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -76,15 +76,14 @@ for(index_of_operations in 1:number_of_operations){
     }else{
       injection_command <- base::paste0("python"," ",getwd(),"/Injection_L0_in_L1_cubes.py")
       base::system(injection_command, intern = TRUE)
+      
     }
     
     he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
-    if(!grepl("injected",base::basename(he5_file))){
-      product_type <- base::substring(base::basename(he5_file),5,6)
-    }else{
-      product_type <- "L0"
-    }
-    
+    he5_file_injected <- gsub(".he5$","_injected.he5",he5_file)
+    file.rename(he5_file, he5_file_injected)
+    he5_file <- he5_file_injected
+    product_type <- "L0"
   }
   if(current_operation == "read"){
     print("READ")

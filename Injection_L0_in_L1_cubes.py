@@ -127,8 +127,11 @@ plt.imshow(swir_L0_filtered[:,100,:])
 
 
 # open the PRISMA file
-path = "/space/put_PRISMA_he5_and_S2_tif_here/"
-f = h5py.File(path+'PRS_L1_STD_OFFL_20231125100740_20231125100744_0001.he5', 'r+')#prendo il file che contiene he5 e PRS_L1
+#path = "C:/Users/Emanuele/Desktop/PRISMA_code/put_PRISMA_he5_and_S2_tif_here/"
+for file in os.listdir(path):
+        if file.endswith(".he5") & file.startswith("PRS"):
+            inputfile = os.path.join(path,file)
+f = h5py.File(inputfile, 'r+')#prendo il file che contiene he5 e PRS_L1
 
 # reading name and value for root attributes (metadata contained in HDF5root)
 for attribute in f.attrs:
@@ -198,5 +201,5 @@ vnir[...]= vnir_L0_filtered * ScaleFactor_VNIR
 
 
 plt.imshow(swir[:, 100,:]) #show band 6
-
-f = os.rename(path+'PRS_L1_STD_OFFL_20231125100740_20231125100744_0001.he5', path+'PRS_L1_STD_OFFL_20231125100740_20231125100744_0001_injected.he5')
+import re
+#os.rename(inputfile, re.sub('.he5$',"_injected.he5",inputfile))
