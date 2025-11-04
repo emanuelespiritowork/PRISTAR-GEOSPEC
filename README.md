@@ -58,7 +58,7 @@ then put inside the box:
 ```
 # HOW TO USE IT
 Use case:
-1) you want read a L0 PRISMA image. Put _data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5_ and _data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5_ into _put_PRISMA_he5_and_S2_tif_here_ folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 products and put the .he5 file inside the _put_PRISMA_he5_and_S2_tif_here_ folder. NB: that file will be overridden so keep a copy of it. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+1) you want read a L0 PRISMA image. Put _data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5_ and _data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5_ into _put_PRISMA_he5_and_S2_tif_here_ folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 products and put the .he5 file inside the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
    procedure_order <- c("inject","read")
 ```
