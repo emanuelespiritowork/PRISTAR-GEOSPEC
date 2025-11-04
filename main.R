@@ -35,7 +35,7 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("ortho","regrid")
+procedure_order <- c("inject")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -74,16 +74,26 @@ for(index_of_operations in 1:number_of_operations){
     if(identical(he5_file,character(0))){
       print("ERRORE")
     }else{
-      injection_command <- base::paste0("python"," ",getwd(),"/Injection_L0_in_L1_cubes.py")
-      base::system(injection_command, intern = TRUE)
       
+      #copy previous he5 file
+      dir.create(paste0(out_folder,"/original_L1/"),recursive = T, showWarnings = F)
+      invisible(file.copy(he5_file,gsub(out_folder,paste0(out_folder,"/original_L1/"),he5_file)))
+      
+      injection_command <- base::paste0("python"," ",getwd(),"/Injection_L0_in_L1_cubes.py")
+      get_result <- base::system(injection_command, intern = TRUE)
+      exit_result <- get_result[length(get_result)]
     }
     
-    he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
-    he5_file_injected <- gsub(".he5$","_injected.he5",he5_file)
-    file.rename(he5_file, he5_file_injected)
-    he5_file <- he5_file_injected
-    product_type <- "L0"
+    if(exit_result == "Correctly_finished"){
+      he5_file <- base::list.files(path = out_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
+      he5_file_injected <- gsub(".he5$","_injected.he5",he5_file)
+      file.rename(he5_file, he5_file_injected)
+      he5_file <- he5_file_injected
+      product_type <- "L0"
+    }else{
+      print("ERRORE")
+    }
+    
   }
   if(current_operation == "read"){
     print("READ")
