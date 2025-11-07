@@ -83,8 +83,9 @@ Use case:
 full_230_bands <- F
 procedure_order <- c("read","coreg","smooth")
 ```
-7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Then open _main.R_ file in Rstudio server and put
+7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Choose type of resampling ("N" for nearest neighbor, "B" for bilinear, "C" for cubic). Then open _main.R_ file in Rstudio server and put
 ```r
+regrid_option <- "N" #that can be either "B" or "C" 
 procedure_order <- c("read","coreg","regrid")
 ```
 
