@@ -1,7 +1,7 @@
 # PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral refinement
 
 PRISTAR-GEOSPEC tool can help you in:
-- reading L0, L1 and L2C PRISMA products;
+- reading L0, L1 and L2 PRISMA products;
 - generate cloud mask for PRISMA;
 - read sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure); 
 - orthoprojection of PRISMA with DEM and Sentinel-2 image using AROSICS and Rational Polynomial Function (RPF);
@@ -62,7 +62,7 @@ Use case:
 ```r
    procedure_order <- c("inject","read")
 ```
-2) you want to read a L1 or L2C PRISMA image in .he5 format. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+2) you want to read a L1 or L2 PRISMA image in .he5 format. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
    procedure_order <- c("read")
 ```
