@@ -313,7 +313,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
 #_____________________________________________________________________
 #regrid ----
 #_____________________________________________________________________
-regrid_function <- function(master_image_path, name_of_current_output_folder, regrid_input_path){
+regrid_function <- function(master_image_path, name_of_current_output_folder, regrid_input_path, resample_type){
   terra::extend(x = terra::rast(master_image_path),
                 y = terra::rast(regrid_input_path),
                 fill = 0,

@@ -25,7 +25,7 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("inject")
+procedure_order <- c("regrid","smooth","crop")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -215,10 +215,22 @@ for(index_of_operations in 1:number_of_operations){
     
     master_image_path <- base::list.files(base::paste0(base::getwd(),"/master_image_for_regridding/"), full.names = T, pattern = "\\.tif$")
     
-    regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
+    regrid_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T)
+    if(identical(regrid_input_path,character(0))){
+      regrid_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T)
+      if(identical(regrid_input_path,character(0))){
+        print("I take ELSE")
+        regrid_input_path <- base::list.files(path = out_folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
+        regrid_input_path <- regrid_input_path[!substr(basename(regrid_input_path),0,2) == "S2"]
+      }else{
+        print("I take FULL")
+      }
+    }else{
+      print("I take FULL_CLD")
+    }
     #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
     
-    regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path)
+    regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path, resample_type)
   }
   if(current_operation == "crop"){
     #chain part
