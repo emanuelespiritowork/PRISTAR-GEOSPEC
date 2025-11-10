@@ -1,16 +1,16 @@
 # PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral refinement
 
 PRISTAR-GEOSPEC tool can help you in:
-- import L0, L1, L2 PRISMA products;
-- extract and clean cloud mask for PRISMA;
-- create unique hyperspectral datacube VNIR+SWIR;
-- extract raster of angles;
-- extract central wavelengths and FWHMs;
-- extract and compute sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure); 
+- importing L0, L1, L2 PRISMA products;
+- extracting and cleaning cloud mask for PRISMA;
+- creating unique hyperspectral datacube VNIR+SWIR;
+- extracting raster of angles;
+- extracting central wavelengths and FWHMs;
+- extracting and computing sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure); 
 - DEM-guided orthoprojection of PRISMA with DEM and Sentinel-2 image using AROSICS and Rational Polynomial Function (RPF);
 - coregistration of PRISMA to Sentinel-2 image using AROSICS and gdalwarp;
 - spectral smoothing and bad-bands removal;
-- regrid and crop the PRISMA image to a master PRISMA image.
+- regriding and cropping the PRISMA image to a master PRISMA image.
 
 # Credits
 
