@@ -4,27 +4,17 @@
 
 #citations: 
 
-#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics
-#https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
+#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for reading L0 products #https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
 
-#Lorenzo Busetto @ CNR-IREA for prismaread package 
-#https://github.com/IREA-CNR-MI/prismaread
-#distributed under GPL-3.0 license
+#Lorenzo Busetto @ CNR-IREA for prismaread package #https://github.com/IREA-CNR-MI/prismaread #distributed under GPL-3.0 license
 
-#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL
-#and for the maintanance of the Docker Container and any hardware-related solution
-#https://github.com/GFZ/arosics
-#distributed under Apache-2.0 license
-#https://gdal.org/en/stable
-#distributed under MIT license
+#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintanance of the Docker Container and any hardware-related solution #https://github.com/GFZ/arosics #distributed under Apache-2.0 license #https://gdal.org/en/stable #distributed under MIT license
 
 #Lorenzo Parigi @ CNR-IREA for smoothing procedure
 
 #Riccardo Canazza for advice in regrid procedure
 
-#Yulun Wu @ University of Ottawa for PRISMA_angle.py code
-#https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py
-#distributed under GPL-3.0 license
+#Yulun Wu @ University of Ottawa for PRISMA_angle.py code #https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py #distributed under GPL-3.0 license
 
 #_____________________________________________________________________
 #inputs ----
