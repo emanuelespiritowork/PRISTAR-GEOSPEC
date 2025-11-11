@@ -314,13 +314,21 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
 #regrid ----
 #_____________________________________________________________________
 regrid_function <- function(master_image_path, name_of_current_output_folder, regrid_input_path, resample_type){
-  terra::extend(x = terra::rast(master_image_path),
-                y = terra::rast(regrid_input_path),
+  master <- terra::rast(master_image_path)
+  slave <- terra::rast(regrid_input_path)
+  
+  if(terra::crs(master, describe = T)$code != terra::crs(slave, describe = T)$code){
+    reproject <- terra::project(master, y = paste0("EPSG:",terra::crs(slave, describe = T)$code))
+    master <- reproject
+  }
+  
+  terra::extend(x = master,
+                y = slave,
                 fill = 0,
                 filename = base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif"),
                 overwrite = T)
   
-  terra::resample(x = terra::rast(regrid_input_path),
+  terra::resample(x = slave,
                   y = terra::rast(base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif")),
                   method = resample_type,
                   threads = T,
@@ -330,14 +338,26 @@ regrid_function <- function(master_image_path, name_of_current_output_folder, re
   
   file.remove(base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif"))
   
+  
+  
 }
 
 #_____________________________________________________________________
 #crop ----
 #_____________________________________________________________________
 crop_function <- function(master_image_path, name_of_current_output_folder, crop_input_path){
-  terra::crop(x = terra::rast(crop_input_path),
-              y = terra::rast(master_image_path),
+  master <- terra::rast(master_image_path)
+  slave <- terra::rast(crop_input_path)
+  
+  if(terra::crs(master, describe = T)$code != terra::crs(slave, describe = T)$code){
+    reproject <- terra::project(master, y = paste0("EPSG:",terra::crs(slave, describe = T)$code))
+    master <- reproject
+  }
+  
+  
+  
+  terra::crop(x = slave,
+              y = master,
               filename = base::paste0(name_of_current_output_folder,"/PRISMA_crop.tif"),
               overwrite = T)
 }
