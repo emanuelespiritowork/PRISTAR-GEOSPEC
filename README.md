@@ -1,4 +1,6 @@
 # PRISTAR-GEOSPEC: PRISma Tools for Analysis in R for GEOcoding and SPECtral refinement
+<img width="370" height="190" alt="image" src="https://github.com/user-attachments/assets/993f23f3-4940-4789-9ebe-cd34ea30afda" />
+<img width="370" height="162" alt="image" src="https://github.com/user-attachments/assets/51eefba9-0e0c-4789-9c15-0aa43b98e723" />
 
 PRISTAR-GEOSPEC tool can help you in:
 - importing L0, L1, L2 PRISMA products;
