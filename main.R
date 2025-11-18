@@ -24,10 +24,11 @@ regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 full_230_bands <- T
 validation_for_coreg <- F
 PRS_band_for_coreg <- 52
+smooth_in_main <- F
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("coreg")
+procedure_order <- c("crop","smooth")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -251,71 +252,74 @@ for(index_of_operations in 1:number_of_operations){
     PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
       tidytable::filter(BB_SUPER_V3 == 1)
     
-    #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
-    #smooth_spectra(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth)
-    
-    input_bad_bands <- PRISMA_bad_bands_table$band
-    
-    input_wvl <- PRISMA_config$center
-    
-    selection_vector <- 1
-    
-    if(full_230_bands){
-      selection_vector <- c(0,1)
-    }
-    
-    #which output bands
-    output_wvl <- PRISMA_config %>%
-      tidytable::filter(BND_SEL %in% selection_vector) %>%
-      tidytable::pull(center)
-    
-    #print("Define spline function")
-    
-    spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
-      # togliamo le bande cattive
-      ref_valid <- pixel[-bad_bands_pos]
-      wvl_valid <- band_center_input[-bad_bands_pos]
+    if(smooth_in_main){
+      input_bad_bands <- PRISMA_bad_bands_table$band
       
-      if (base::any(is.na(ref_valid))) {
-        return(base::rep(NA_real_, base::length(band_center_output)))
+      input_wvl <- PRISMA_config$center
+      
+      selection_vector <- 1
+      
+      if(full_230_bands){
+        selection_vector <- c(0,1)
       }
       
-      sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
-      y_smooth <- stats::predict(sp, x = band_center_output)$y
-      # limitiamo a zero
-      y_smooth[y_smooth < 0] <- 0
-      return(y_smooth)
-    }
-    
-    #print("Read terra image")
-    
-    terra_image <- terra::rast(terra_image_path)
-    
-    if(cloud_smooth){
-      terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
-    }else{
-      terra_image_sub <- terra_image
-    }
-    
-    #print("Apply smoothing")
-    
-    #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
-    
-    #terra::gdalCache(1000000)
-    
-    terra::app(
-      x = terra_image_sub,
-      fun = spline_fun,
-      band_center_input = input_wvl, 
-      bad_bands_pos = input_bad_bands, 
-      band_center_output = output_wvl,
-      df=40,
+      #which output bands
+      output_wvl <- PRISMA_config %>%
+        tidytable::filter(BND_SEL %in% selection_vector) %>%
+        tidytable::pull(center)
       
-      cores = 7,                     
-      filename = smoothing_out,
-      overwrite = TRUE,
-      wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
-    )
+      #print("Define spline function")
+      
+      spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
+        # togliamo le bande cattive
+        ref_valid <- pixel[-bad_bands_pos]
+        wvl_valid <- band_center_input[-bad_bands_pos]
+        
+        if (base::any(is.na(ref_valid))) {
+          return(base::rep(NA_real_, base::length(band_center_output)))
+        }
+        
+        sp <- stats::smooth.spline(x = wvl_valid, y = ref_valid, df = df)
+        y_smooth <- stats::predict(sp, x = band_center_output)$y
+        # limitiamo a zero
+        y_smooth[y_smooth < 0] <- 0
+        return(y_smooth)
+      }
+      
+      #print("Read terra image")
+      
+      terra_image <- terra::rast(terra_image_path)
+      
+      if(cloud_smooth){
+        terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
+      }else{
+        terra_image_sub <- terra_image
+      }
+      
+      #print("Apply smoothing")
+      
+      #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
+      
+      #terra::gdalCache(1000000)
+      
+      terra::app(
+        x = terra_image_sub,
+        fun = spline_fun,
+        band_center_input = input_wvl, 
+        bad_bands_pos = input_bad_bands, 
+        band_center_output = output_wvl,
+        df=40,
+        
+        cores = 7,                     
+        filename = smoothing_out,
+        overwrite = TRUE,
+        wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
+      )
+    }else{
+      #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
+      smooth_spectra(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth,full_230_bands)
+    }
+    
   }
   
 }

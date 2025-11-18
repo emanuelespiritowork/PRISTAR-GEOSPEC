@@ -411,16 +411,23 @@ crop_function <- function(master_image_path, name_of_current_output_folder, crop
 #_____________________________________________________________________
 #smooth ----
 #_____________________________________________________________________
-smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth){
+smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth,full_230_bands){
   input_bad_bands <- PRISMA_bad_bands_table$band
   
   input_wvl <- PRISMA_config$center
   
+  selection_vector <- 1
+  
+  if(full_230_bands){
+    selection_vector <- c(0,1)
+  }
+  
+  #which output bands
   output_wvl <- PRISMA_config %>%
-    tidytable::filter(BND_SEL  == 1) %>%
+    tidytable::filter(BND_SEL %in% selection_vector) %>%
     tidytable::pull(center)
   
-  print("Define spline function")
+  #print("Define spline function")
   
   spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
     # togliamo le bande cattive
@@ -438,7 +445,7 @@ smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table
     return(y_smooth)
   }
   
-  print("Read terra image")
+  #print("Read terra image")
   
   terra_image <- terra::rast(terra_image_path)
   
@@ -448,7 +455,7 @@ smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table
     terra_image_sub <- terra_image
   }
   
-  print("Apply smoothing")
+  #print("Apply smoothing")
   
   #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
   
@@ -467,6 +474,8 @@ smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table
     overwrite = TRUE,
     wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
   )
+  
+  return(NULL)
 }
 
 
