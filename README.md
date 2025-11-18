@@ -75,7 +75,7 @@ Use case:
 ```r
    procedure_order <- c("read","cloud","atcor")
 ```
-4) you want to read and coregister your PRISMA image to a one-band Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+4) you want to read and coregister your PRISMA image to a one-band Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 one-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
    procedure_order <- c("read","coreg")
 ```
