@@ -39,7 +39,7 @@ PRISTAR-GEOSPEC tool can help you in:
 #distributed under GPL-3.0 license
 
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Download PRISTAR-GEOSPEC master github repo into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
+Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC master github repo into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
 ```cmd
 docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 --memory="24576m" --memory-swap="24576m" -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
 ``` 
