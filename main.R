@@ -22,10 +22,11 @@
 #for normal users: modify only things in this section
 regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 full_230_bands <- T
+validation_for_coreg <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("coreg","regrid","crop","smooth")
+procedure_order <- c("crop","smooth")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -157,13 +158,21 @@ for(index_of_operations in 1:number_of_operations){
     
     coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type)
     
-    #base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
     
-    #coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path)
+    if(validation_for_coreg){
+      base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
+      dem <- F
+      
+      if(current_operation == "coreg"){
+        coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path,product_type)
+        file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
+      }else{
+        coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/raster_focal.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path,product_type)
+        file.remove(paste0(name_of_current_output_folder,"/validation/raster_focal.tif"))
+      }
+      
+    }
     
-    #file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj.tif"))
-    #file.remove(paste0(name_of_current_output_folder,"/prs_crs_translate_warp_proj_52.tif"))
-    #file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
     
   }
   if(current_operation == "regrid"){
@@ -233,8 +242,6 @@ for(index_of_operations in 1:number_of_operations){
     }
     
     
-    #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
-    #smooth_spectra(terra_image_path,smoothing_out,cloud_smooth)
     
     library(tidytable)
     
@@ -243,6 +250,9 @@ for(index_of_operations in 1:number_of_operations){
     
     PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
       tidytable::filter(BB_SUPER_V3 == 1)
+    
+    #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
+    #smooth_spectra(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth)
     
     input_bad_bands <- PRISMA_bad_bands_table$band
     

@@ -411,13 +411,7 @@ crop_function <- function(master_image_path, name_of_current_output_folder, crop
 #_____________________________________________________________________
 #smooth ----
 #_____________________________________________________________________
-smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
-  PRISMA_config <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_spectral_configuration.csv")) %>%
-    tidytable::mutate(band_row = tidytable::row_number()) 
-  
-  PRISMA_bad_bands_table <- tidytable::fread(base::paste0(base::getwd(),"/PRISMA_band_selections.csv")) %>%
-    tidytable::filter(BB_SUPER_V3 == 1)
-  
+smooth_spectra <- function(terra_image_path,PRISMA_config,PRISMA_bad_bands_table,smoothing_out,cloud_smooth){
   input_bad_bands <- PRISMA_bad_bands_table$band
   
   input_wvl <- PRISMA_config$center
@@ -456,9 +450,9 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
   
   print("Apply smoothing")
   
-  terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
+  #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
   
-  terra::gdalCache(1000000)
+  #terra::gdalCache(1000000)
   
   terra::app(
     x = terra_image_sub,
@@ -474,3 +468,5 @@ smooth_spectra <- function(terra_image_path,smoothing_out,cloud_smooth){
     wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES"))
   )
 }
+
+
