@@ -25,7 +25,7 @@ full_230_bands <- T
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("regrid","smooth","crop")
+procedure_order <- c("coreg","regrid","crop","smooth")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -119,46 +119,25 @@ for(index_of_operations in 1:number_of_operations){
   if(current_operation == "coreg" | current_operation == "ortho"){
     #chain part
     print("COREG/ORTHO")
-    if(name_of_current_output_folder == ""){
-      name_of_current_output_folder <- paste0(out_folder,current_operation)
-    }else{
-      out_folder <- name_of_current_output_folder
-      name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
-    }
+    vector_chain <- check_folder_chain(name_of_current_output_folder, out_folder, current_operation)
+    name_of_current_output_folder <- vector_chain[1]
+    out_folder <- vector_chain[2]
+    coreg_input_path <- check_file_chain(out_folder)
     
-    base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
-    base::dir.create(paste0(out_folder,"DEM"), recursive = T, showWarnings = F)
-    
-    
-    #coregistration part
+    #S2 part
     s2_file <- base::list.files(path = s2_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
-    coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T)
-    coreg_proj_path <- base::gsub("FULL_CLD","FULL_CLD_proj",coreg_input_path)
-    if(identical(coreg_input_path,character(0))){
-      coreg_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T)
-      coreg_proj_path <- base::gsub("FULL","FULL_proj",coreg_input_path)
-      if(identical(coreg_input_path,character(0))){
-        print("I take ELSE")
-        coreg_input_path <- base::list.files(path = out_folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
-        coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
-        coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
-      }else{
-        print("I take FULL")
-      }
-    }else{
-      print("I take FULL_CLD")
-    }
     
     #DEM part
+    base::dir.create(base::paste0(base::getwd(),"/DEM/"), recursive = T, showWarnings = F)
     dem <- F
     dem_path <- NULL
     target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
-    if(!identical(list.files(paste0(out_folder,"DEM")),character(0))){
+    if(!identical(list.files(base::paste0(base::getwd(),"/DEM/")),character(0))){
       dem <- T
-      if(!identical(list.files(paste0(out_folder,"DEM"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T), character(0))){
-        dem_path <- list.files(paste0(out_folder,"DEM"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T)
+      if(!identical(list.files(base::paste0(base::getwd(),"/DEM/"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T), character(0))){
+        dem_path <- list.files(base::paste0(base::getwd(),"/DEM/"), pattern = "\\_projected.tif$", ignore.case = T, full.names = T)
       }else{
-        dem_path_not_projected <- list.files(paste0(out_folder,"DEM"), pattern = "\\.tif$", ignore.case = T, full.names = T)
+        dem_path_not_projected <- list.files(base::paste0(base::getwd(),"/DEM/"), pattern = "\\.tif$", ignore.case = T, full.names = T)
         dem_projected <- terra::project(x = terra::rast(dem_path_not_projected),
                                         y = target_epsg,
                                         method = "near")
@@ -174,9 +153,9 @@ for(index_of_operations in 1:number_of_operations){
       dem <- F
     }
     
-    #coreg_out_folder <- name_of_current_output_folder
+    #coregistration/orthoprojection part
     
-    coregistration_to_s2(s2_file,coreg_input_path,coreg_proj_path,name_of_current_output_folder,dem,dem_path,product_type)
+    coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type)
     
     #base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
     
@@ -190,14 +169,10 @@ for(index_of_operations in 1:number_of_operations){
   if(current_operation == "regrid"){
     #chain part
     print("REGRID")
-    if(name_of_current_output_folder == ""){
-      name_of_current_output_folder <- paste0(out_folder,current_operation)
-    }else{
-      out_folder <- name_of_current_output_folder
-      name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
-    }
-    
-    base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+    vector_chain <- check_folder_chain(name_of_current_output_folder, out_folder, current_operation)
+    name_of_current_output_folder <- vector_chain[1]
+    out_folder <- vector_chain[2]
+    regrid_input_path <- check_file_chain(out_folder)
     
     #regrid part
     
@@ -215,34 +190,18 @@ for(index_of_operations in 1:number_of_operations){
     
     master_image_path <- base::list.files(base::paste0(base::getwd(),"/master_image_for_regridding/"), full.names = T, pattern = "\\.tif$")
     
-    regrid_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T)
-    if(identical(regrid_input_path,character(0))){
-      regrid_input_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T)
-      if(identical(regrid_input_path,character(0))){
-        print("I take ELSE")
-        regrid_input_path <- base::list.files(path = out_folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
-        regrid_input_path <- regrid_input_path[!substr(basename(regrid_input_path),0,2) == "S2"]
-      }else{
-        print("I take FULL")
-      }
-    }else{
-      print("I take FULL_CLD")
-    }
     #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
     
     regrid_function(master_image_path, name_of_current_output_folder, regrid_input_path, resample_type)
   }
+  
   if(current_operation == "crop"){
     #chain part
     print("CROP")
-    if(name_of_current_output_folder == ""){
-      name_of_current_output_folder <- paste0(out_folder,current_operation)
-    }else{
-      out_folder <- name_of_current_output_folder
-      name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
-    }
-    
-    base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+    vector_chain <- check_folder_chain(name_of_current_output_folder, out_folder, current_operation)
+    name_of_current_output_folder <- vector_chain[1]
+    out_folder <- vector_chain[2]
+    crop_input_path <- check_file_chain(out_folder)
     
     #crop part
     
@@ -252,7 +211,6 @@ for(index_of_operations in 1:number_of_operations){
     
     master_image_path <- base::list.files(base::paste0(base::getwd(),"/master_image_for_regridding/"), full.names = T, pattern = "\\.tif$")
     
-    crop_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.tif$")
     #regrid_input_path <- base::list.files(out_folder, full.names = T, pattern = "\\.bsq$")
     
     crop_function(master_image_path, name_of_current_output_folder, crop_input_path)
@@ -260,25 +218,20 @@ for(index_of_operations in 1:number_of_operations){
   if(current_operation == "smooth"){
     #chain part
     print("SMOOTH")
-    if(name_of_current_output_folder == ""){
-      name_of_current_output_folder <- paste0(out_folder,current_operation)
-    }else{
-      out_folder <- name_of_current_output_folder
-      name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
-    }
-    
-    base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+    vector_chain <- check_folder_chain(name_of_current_output_folder, out_folder, current_operation)
+    name_of_current_output_folder <- vector_chain[1]
+    out_folder <- vector_chain[2]
+    terra_image_path <- check_file_chain(out_folder)
     
     #smooth part
     smoothing_out <-  base::paste0(name_of_current_output_folder, "/PRISMA_smoothed.tif")
     
-    if("cloud" %in% procedure_order){
+    if("cloud" %in% procedure_order | !identical(list.files(he5_folder,pattern = "*_FULL_CLD.tif$"),character(0))){
       cloud_smooth <- T
     }else{
       cloud_smooth <- F
     }
     
-    terra_image_path <- base::list.files(out_folder, pattern = "\\.tif$", full.names = T)
     
     #this would be the idea but when I put the smoothing code into a new function the terra::app does not work
     #smooth_spectra(terra_image_path,smoothing_out,cloud_smooth)

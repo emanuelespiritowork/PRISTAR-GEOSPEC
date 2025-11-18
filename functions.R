@@ -1,3 +1,44 @@
+#_____________________________________________________________________
+#check_folder_chain ----
+#_____________________________________________________________________
+check_folder_chain <- function(name_of_current_output_folder, out_folder, current_operation){
+  if(name_of_current_output_folder == ""){
+    name_of_current_output_folder <- paste0(out_folder,current_operation)
+  }else{
+    out_folder <- name_of_current_output_folder
+    name_of_current_output_folder <- paste0(name_of_current_output_folder,"_",current_operation)
+  }
+  
+  base::dir.create(name_of_current_output_folder, recursive = T, showWarnings = F)
+  
+  return(c(name_of_current_output_folder, out_folder))
+}
+
+
+#_____________________________________________________________________
+#check_file_chain ----
+#_____________________________________________________________________
+check_file_chain <- function(folder){
+  coreg_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T)
+  #coreg_proj_path <- base::gsub("FULL_CLD","FULL_CLD_proj",coreg_input_path)
+  if(identical(coreg_input_path,character(0))){
+    coreg_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL.tif$", full.names = T)
+    #coreg_proj_path <- base::gsub("FULL","FULL_proj",coreg_input_path)
+    if(identical(coreg_input_path,character(0))){
+      print("I take ELSE")
+      coreg_input_path <- base::list.files(path = folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
+      coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
+      #coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
+    }else{
+      print("I take FULL")
+    }
+  }else{
+    print("I take FULL_CLD")
+  }
+  
+  return(coreg_input_path)
+}
+
 
 #_____________________________________________________________________
 #prismaread ----
@@ -85,10 +126,12 @@ cloud_mask <- function(cloud_path, full_path){
 #_____________________________________________________________________
 #coreg ----
 #_____________________________________________________________________
-coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_out_folder,dem,dem_path,product_type){
+coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,dem_path,product_type){
   #print("DEM is")
   #print(dem)
   #create single layer image to coregister and change crs to EPSG:32632
+  coreg_proj_path <- gsub("*.tif$","_proj.tif",coreg_input_path)
+  
   target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
   
   prisma_projected <- terra::project(x = terra::rast(coreg_input_path),
@@ -98,9 +141,11 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
   terra::writeRaster(prisma_projected, 
                      coreg_proj_path,
                      overwrite = T)
+  
+  coreg_proj_path_52 <- base::gsub("proj","proj_52",coreg_proj_path)
   terra::subset(x = prisma_projected, 
                 subset = 52, 
-                filename = base::gsub("proj","proj_52",coreg_proj_path), 
+                filename = coreg_proj_path_52, 
                 overwrite = T)
   
   # set arguments
@@ -306,7 +351,8 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_proj_path,coreg_
   
   #convert DEM from geoid to ellipsoidal
   #gdalwarp -s_srs "+proj=longlat +datum=WGS84 +no_defs +geoidgrids=/space/put_PRISMA_he5_and_S2_tif_here/DEM/egm96_15.gtx" -t_srs "+proj=longlat +datum=WGS84 +no_def" /space/put_PRISMA_he5_and_S2_tif_here/DEM/Senales_2024_02.tif /space/put_PRISMA_he5_and_S2_tif_here/DEM/Senales_2024_02_ellipsoid.tif
-  
+  file.remove(coreg_proj_path_52)
+  file.remove(coreg_proj_path)
   
 }
 
