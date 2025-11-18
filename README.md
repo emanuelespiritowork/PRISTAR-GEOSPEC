@@ -75,20 +75,20 @@ Use case:
 ```r
    procedure_order <- c("read","cloud","atcor")
 ```
-4) you want to read and coregister your PRISMA image to a Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+4) you want to read and coregister your PRISMA image to a single-band Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
    procedure_order <- c("read","coreg")
 ```
-5) you want to read and orthoproject your PRISMA image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your DEM image into .tif format into _DEM_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+5) you want to read and orthoproject your PRISMA image. Put your PRISMA file in .he5 format and S2 single-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your DEM image into .tif format into _DEM_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
    procedure_order <- c("read","ortho")
 ```
-6) you want to read, coregister your PRISMA image and spectral smooth with bad bands removal. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and put
+6) you want to read, coregister your PRISMA image and spectral smooth with bad bands removal. Put your PRISMA file in .he5 format and S2 single-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and put
 ```r
 full_230_bands <- F
 procedure_order <- c("read","coreg","smooth")
 ```
-7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Choose type of resampling ("N" for nearest neighbor, "B" for bilinear, "C" for cubic). Then open _main.R_ file in Rstudio server and put
+7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 single-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Choose type of resampling ("N" for nearest neighbor, "B" for bilinear, "C" for cubic). Then open _main.R_ file in Rstudio server and put
 ```r
 regrid_option <- "N" #that can be either "B" or "C" 
 procedure_order <- c("read","coreg","regrid")
