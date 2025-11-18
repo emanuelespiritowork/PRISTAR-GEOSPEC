@@ -126,7 +126,7 @@ cloud_mask <- function(cloud_path, full_path){
 #_____________________________________________________________________
 #coreg ----
 #_____________________________________________________________________
-coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,dem_path,product_type){
+coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,dem_path,product_type,PRS_band_for_coreg){
   #print("DEM is")
   #print(dem)
   #create single layer image to coregister and change crs to EPSG:32632
@@ -144,7 +144,7 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,d
   
   coreg_proj_path_52 <- base::gsub("proj","proj_52",coreg_proj_path)
   terra::subset(x = prisma_projected, 
-                subset = 52, 
+                subset = as.numeric(PRS_band_for_coreg), 
                 filename = coreg_proj_path_52, 
                 overwrite = T)
   

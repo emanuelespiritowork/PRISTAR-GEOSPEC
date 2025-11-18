@@ -22,11 +22,12 @@
 #for normal users: modify only things in this section
 regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 full_230_bands <- T
-validation_for_coreg <- T
+validation_for_coreg <- F
+PRS_band_for_coreg <- 52
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("crop","smooth")
+procedure_order <- c("coreg")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -156,21 +157,20 @@ for(index_of_operations in 1:number_of_operations){
     
     #coregistration/orthoprojection part
     
-    coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type)
+    coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type,PRS_band_for_coreg)
     
     
     if(validation_for_coreg){
       base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
       dem <- F
-      
+      output_file <- paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif")
       if(current_operation == "coreg"){
-        coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path,product_type)
-        file.remove(paste0(name_of_current_output_folder,"/validation/prs_crs_translate_warp.tif"))
+        input_file <- paste0(name_of_current_output_folder,"/prs_crs_translate_warp.tif")
       }else{
-        coregistration_to_s2(s2_file,paste0(name_of_current_output_folder,"/raster_focal.tif"),paste0(name_of_current_output_folder,"/validation"),dem,dem_path,product_type)
-        file.remove(paste0(name_of_current_output_folder,"/validation/raster_focal.tif"))
+        input_file <- paste0(name_of_current_output_folder,"/raster_focal.tif")
       }
-      
+      coregistration_to_s2(s2_file,input_file,paste0(name_of_current_output_folder,"/validation"),dem,dem_path,product_type,PRS_band_for_coreg)
+      file.remove(output_file)
     }
     
     
