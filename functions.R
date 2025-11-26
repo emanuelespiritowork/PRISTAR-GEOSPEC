@@ -101,8 +101,8 @@ atcor_parameters <- function(angle_file_path){
   write.table(prismaread_angle_file,paste0(base::dirname(angle_file_path),"/ATCOR/all_angles_file.csv"), 
             quote = F, 
             row.names = F,
-            sep = ","
-            append = F)
+            append = F,
+            sep = ",")
 }
 
 cloud_mask <- function(cloud_path, full_path){
