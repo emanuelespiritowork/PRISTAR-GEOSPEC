@@ -28,7 +28,7 @@ smooth_in_main <- F
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("crop","smooth")
+procedure_order <- c("atcor")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
