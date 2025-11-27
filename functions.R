@@ -96,6 +96,10 @@ atcor_parameters <- function(angle_file_path){
   prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
   prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
   
+  if(prismaread_angle_file$sensor_azimuth < 0){
+    prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
+  }
+  
   suppressWarnings(dir.create(paste0(base::dirname(angle_file_path),"/ATCOR/")))
   
   write.table(prismaread_angle_file,paste0(base::dirname(angle_file_path),"/ATCOR/all_angles_file.csv"), 
@@ -103,6 +107,12 @@ atcor_parameters <- function(angle_file_path){
             row.names = F,
             append = F,
             sep = ",")
+  
+  print("Please read the ATCOR_readme.txt file for info on angles.")
+  
+  atcor_readme <- "Azimuth angles range = [0,360]Deg. Zenith angles range = [0,90]Deg"
+  
+  write(atcor_readme,paste0(base::dirname(angle_file_path),"/ATCOR/atcor_readme.txt"))
 }
 
 cloud_mask <- function(cloud_path, full_path){
