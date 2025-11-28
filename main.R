@@ -28,7 +28,7 @@ smooth_in_main <- F
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("atcor")
+procedure_order <- c("inject","read")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -98,6 +98,11 @@ for(index_of_operations in 1:number_of_operations){
   }
   if(current_operation == "cloud"){
     print("CLOUD")
+    
+    if(product_type == "L0"){
+      print("ERRORE. Si genera la cloud mask non relativa al prodotto L0 ma al prodotto L1 originario")
+    }
+    
     cloud_path <- base::list.files(path = he5_folder, pattern = "\\_HCO_CLD.tif$", full.names = T)
     full_path <- base::list.files(path = he5_folder, pattern = "\\_HCO_FULL.tif$", full.names = T)
     if(identical(cloud_path,character(0)) | identical(full_path,character(0))){
@@ -108,6 +113,11 @@ for(index_of_operations in 1:number_of_operations){
   }
   if(current_operation == "atcor"){
     print("ATCOR")
+    
+    if(product_type == "L0"){
+      print("ERRORE. Si genera la geometria non relativa al prodotto L0 ma al prodotto L1 originario")
+    }
+    
     angle_file_path <- base::list.files(path = he5_folder, pattern = "\\HCO.ang$", full.names = T)
     if(identical(he5_file,character(0)) | identical(angle_file_path,character(0))){
       print("ERRORE")
