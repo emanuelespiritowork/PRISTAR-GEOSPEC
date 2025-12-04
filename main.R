@@ -28,7 +28,7 @@ smooth_in_main <- F
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("inject","read")
+procedure_order <- c("inject")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -85,6 +85,7 @@ for(index_of_operations in 1:number_of_operations){
       product_type <- "L0"
     }else{
       print("ERRORE")
+      procedure_order <- NULL
     }
     
   }

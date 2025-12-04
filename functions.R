@@ -25,10 +25,16 @@ check_file_chain <- function(folder){
     coreg_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL.tif$", full.names = T)
     #coreg_proj_path <- base::gsub("FULL","FULL_proj",coreg_input_path)
     if(identical(coreg_input_path,character(0))){
-      print("I take ELSE")
-      coreg_input_path <- base::list.files(path = folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
-      coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
-      #coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
+      coreg_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL_traslated.tif$", full.names = T)
+      if(identical(coreg_input_path,character(0))){
+        print("I take ELSE")
+        coreg_input_path <- base::list.files(path = folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
+        coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
+        #coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
+      }else{
+        print("I take FULL_traslated")
+      }
+      
     }else{
       print("I take FULL")
     }
