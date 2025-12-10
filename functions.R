@@ -148,32 +148,94 @@ cloud_mask <- function(cloud_path, full_path){
 #_____________________________________________________________________
 #coreg ----
 #_____________________________________________________________________
-coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,dem_path,product_type,PRS_band_for_coreg){
-  #print("DEM is")
-  #print(dem)
+coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,dem_path,product_type,PRS_band_for_coreg,shift = F, shift_x = 0, shift_y = 0){
   #create single layer image to coregister and change crs to EPSG:32632
   coreg_proj_path <- gsub("*.tif$","_proj.tif",coreg_input_path)
+  coreg_proj_path_52 <- base::gsub("proj","proj_52",coreg_proj_path)
   
   target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
   
   prisma_projected <- terra::project(x = terra::rast(coreg_input_path),
                                      y = target_epsg,
                                      method = "near")
-  saveRDS(prisma_projected, paste0(coreg_out_folder,"/prisma_projected.rds"))
-  terra::writeRaster(prisma_projected, 
-                     coreg_proj_path,
-                     overwrite = T)
   
-  coreg_proj_path_52 <- base::gsub("proj","proj_52",coreg_proj_path)
-  terra::subset(x = prisma_projected, 
-                subset = as.numeric(PRS_band_for_coreg), 
-                filename = coreg_proj_path_52, 
-                overwrite = T)
+  prisma_projected_52 <- terra::subset(x = prisma_projected, 
+                                       subset = as.numeric(PRS_band_for_coreg))
+  
+  #terra::plot(terra::rast(coreg_proj_path_52))
+  
+  # if(product_type == "L0"){
+  #   #manual traslation
+  #   shift_x 
+  #   shift_y
+    
+    
+    
+    
+    # prisma_extended <- terra::extend(x = terra::rast(coreg_proj_path_52), 
+    #                                  y = c(1000,1000,1000,1000),
+    #                                  #filename = gsub("52","53",coreg_proj_path_52),
+    #                                  fill = 0,
+    #                                  overwrite = T)
+    # 
+    # prisma_extended <- terra::subst(prisma_extended, NA, 0)
+    # prisma_extended <- terra::subst(prisma_extended, 0, -1)
+    # 
+    # terra::writeRaster(prisma_extended, 
+    #                    coreg_proj_path_52,
+    #                    overwrite = T)
+    # 
+    # prisma_extended <- terra::extend(x = terra::rast(coreg_proj_path), 
+    #                                  y = c(1000,1000,1000,1000),
+    #                                  #filename = gsub("52","53",coreg_proj_path_52),
+    #                                  fill = 0,
+    #                                  overwrite = T)
+    # 
+    # prisma_extended <- terra::subst(prisma_extended, NA, 0)
+    # prisma_extended <- terra::subst(prisma_extended, 0, -1)
+    # 
+    # terra::writeRaster(prisma_extended, 
+    #                    coreg_proj_path,
+    #                    overwrite = T)
+    
+    
+    #terra::plot(prisma_extended)
+  # }
+  
+  if(shift){
+    print("shift for all bands")
+    shifted <- raster::shift(x = prisma_projected,
+                             dx = shift_x,
+                             dy = shift_y)
+    
+    terra::writeRaster(shifted, gsub("*.tif$","_traslated.tif",coreg_proj_path))
+    
+    coreg_proj_path <- gsub("*.tif$","_traslated.tif",coreg_proj_path)
+    
+    print("shift for 52 band")
+    shifted <- raster::shift(x = prisma_projected_52,
+                             dx = shift_x,
+                             dy = shift_y)
+    
+    terra::writeRaster(shifted, gsub("*.tif$","_traslated.tif",coreg_proj_path_52))
+    
+    coreg_proj_path_52 <- gsub("*.tif$","_traslated.tif",coreg_proj_path_52)
+    
+    
+  }else{
+    terra::writeRaster(prisma_projected, 
+                       coreg_proj_path,
+                       overwrite = T)
+    
+    terra::writeRaster(prisma_projected_52, 
+                       coreg_proj_path_52,
+                       overwrite = T)
+  }
   
   # set arguments
   single_band_reference_image <- s2_file
-  single_band_image_to_coregister <- base::list.files(base::dirname(coreg_input_path),"\\proj_52.tif$", full.names = T)
-  multiband_image_to_coregister <- base::list.files(base::dirname(coreg_input_path),"\\proj.tif$", full.names = T)
+  single_band_image_to_coregister <- coreg_proj_path_52
+  multiband_image_to_coregister <- coreg_proj_path
   if(product_type == "L0"){
     arosics_local_path <- base::paste0("python"," ",base::getwd(),"/arosics_local_L0.py")
   }else{
@@ -188,8 +250,88 @@ coregistration_to_s2 <- function(s2_file,coreg_input_path,coreg_out_folder,dem,d
   # run AROSICS to get GCPs
   base::system(arosics_run_command)
   # import GCPs
-  gcp_lines <- base::readLines(con=base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE))
+  #gcp_lines <- base::readLines(con=base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE))
   # generate GCP line to be used in GDAL
+  
+  # if(product_type == "L0"){
+  #   #remove gcp outside the boundary of the image
+  #   # gcp_all <- terra::extract(x = terra::rast(coreg_proj_path_52),
+  #   #                y = terra::vect(base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE)),
+  #   #                ID = F,
+  #   #                bind = T) 
+  #   #not correct because we need to use satellite coordinates
+  #   vect <- terra::vect(base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE))
+  #   proj_df <- as.data.frame(terra::rast(coreg_proj_path_52), xy = F, cells = T)  
+  #   library(tidytable)
+  #   rowcol <- tidyterra::as_coordinates(terra::rast(coreg_proj_path_52), as.raster = FALSE) %>%
+  #     rename(cell = cellindex, row = rowindex, col = colindex) %>%
+  #   #qui bisogna invertire le righe per fare in modo che dall'angolo in alto a sinistra 
+  #   #si passi all'angolo in basso a sinistra
+  #     group_by(col) %>%
+  #     mutate(row_number = row_number()) %>%
+  #     mutate(max_row_number = max(row_number)) %>%
+  #     ungroup() %>%
+  #     mutate(new_row = max_row_number - row) %>%
+  #     select(-max_row_number,-row_number,-row) %>%
+  #     rename(row = new_row) 
+  #     #group_by(row) %>% #questo se devo invertire anche le x
+  #     #mutate(col_number = row_number()) %>%
+  #     #mutate(max_col_number = max(col_number)) %>%
+  #     #ungroup() %>%
+  #     #mutate(new_col = max_col_number - col) %>%
+  #     #select(-max_col_number,-col_number,-col) %>%
+  #     #rename(col = new_col)
+  #   
+  #   proj_df_rowcol <- proj_df %>% left_join(rowcol)
+  #   
+  #   library(tidytable)
+  #   col_name <- names(proj_df %>% select(-cell))
+  #   gcp_spec <- proj_df_rowcol %>% rename(value = any_of(col_name)) %>%
+  #     filter(value > 0) %>%
+  #     na.omit() %>%
+  #     select(row,col) %>%
+  #     rename(X_IM = col, Y_IM = row)
+  #   
+  #   #  filter(value > 0) 
+  #   # na.omit()
+  #   # select(any_of(x,y))
+  #   # left_join(vect)
+  #   # select(X_IM,Y_IM) => così tiro fuori gcp_spec
+  #   
+  #   # vect_names <- names(terra::vect(base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE)))
+  #   # col_name <- names(gcp_all)[!(names(gcp_all) %in% vect_names)]
+  #   # gcp_spec <- gcp_all %>%
+  #   #   sf::st_as_sf() %>%
+  #   #   tidytable::select(any_of(c("X_IM","Y_IM",col_name))) %>%
+  #   #   rename(value = any_of(col_name)) %>%
+  #   #   filter(value > 0) %>%
+  #   #   na.omit() %>%
+  #   #   select(-value)
+  #   
+  #   gcp_read <- read.csv(base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), 
+  #                        sep = " ", 
+  #                        header = F) %>%
+  #     rename(X_IM = V1, Y_IM = V2, X_PROJ = V3, Y_PROJ = V4) %>%
+  #     left_join(gcp_spec,.) %>%
+  #     na.omit()
+  #   
+  #   gcp_to_print <- terra::vect(x = gcp_read %>% as.data.frame(),
+  #               geom = c("X_PROJ","Y_PROJ"),
+  #               crs = "epsg:32632")
+  #   
+  #   terra::writeVector(gcp_to_print, 
+  #                      base::normalizePath(path=base::paste(output_directory, "/", "points_sel.gpkg", sep=""), winslash="/", mustWork=FALSE),
+  #                      overwrite = T)
+  #   
+  #   write.table(gcp_read, base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE),
+  #               quote = F,
+  #               row.names = F,
+  #               col.names = F,
+  #               sep = " ",
+  #               append = F)
+  # }
+  
+  gcp_lines <- base::readLines(con=base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE))
   
   #add z coordinates to the GCP if there is a DEM
   if(dem){

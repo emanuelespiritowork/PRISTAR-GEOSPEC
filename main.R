@@ -25,10 +25,13 @@ full_230_bands <- T
 validation_for_coreg <- F
 PRS_band_for_coreg <- 52
 smooth_in_main <- F
+shift <- F
+shift_x <- 0
+shift_y <- 0
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("inject")
+procedure_order <- c("coreg")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
@@ -169,7 +172,7 @@ for(index_of_operations in 1:number_of_operations){
     
     #coregistration/orthoprojection part
     
-    coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type,PRS_band_for_coreg)
+    coregistration_to_s2(s2_file,coreg_input_path,name_of_current_output_folder,dem,dem_path,product_type,PRS_band_for_coreg,shift,shift_x,shift_y)
     
     
     if(validation_for_coreg){
