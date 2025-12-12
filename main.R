@@ -31,7 +31,7 @@ shift_y <- 0
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-procedure_order <- c("coreg")
+procedure_order <- c("read")
 #elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho
 
 #_____________________________________________________________________
