@@ -29,7 +29,7 @@ check_file_chain <- function(folder){
       if(identical(coreg_input_path,character(0))){
         print("I take ELSE")
         coreg_input_path <- base::list.files(path = folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
-        coreg_input_path <- coreg_input_path[!substr(basename(coreg_input_path),0,2) == "S2"]
+        coreg_input_path <- coreg_input_path[!(substr(basename(coreg_input_path),0,2) == "S2") & !(substr(basename(coreg_input_path),0,2) == "s2")]
         #coreg_proj_path <- gsub(".tif","_proj.tif",coreg_input_path)
       }else{
         print("I take FULL_traslated")
