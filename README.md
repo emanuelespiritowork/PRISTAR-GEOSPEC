@@ -2,6 +2,13 @@
 <img width="370" height="190" alt="image" src="https://github.com/user-attachments/assets/993f23f3-4940-4789-9ebe-cd34ea30afda" />
 <img width="370" height="162" alt="image" src="https://github.com/user-attachments/assets/51eefba9-0e0c-4789-9c15-0aa43b98e723" />
 
+---
+
+PRISMA (PRecursore IperSpettrale della Missione Applicativa) is a pilot hyperspectral satellite launched by ASI (Agenzia Spaziale Italiana) in 2019. Its main research pillars are agriculture, forest, waters, climate change, and raw material exploration. In the context of PRISMA data processing, three issues arise when dealing with L1 (Top of Atmosphere Radiance) and L2 (Bottom of Atmosphere Reflectance) products. First, the products are delivered in HDF format, which is not commonly ready-to-use in a geospatial software, and hyperspectral data is stored into two different stacks, Visibile to Near InfraRed and ShortWave InfraRed, to be merged for further processing. Secondly, PRISMA geocoding accuracy is not within the pixel size (30 m), and then requires a refinement. Thirdly, users may need to perform an ad hoc atmospheric correction for particular targets (e.g. water) and L1 is not geocoded. Available PRISMA tools, importing its format are ENVI-toolkit (NV5 Geospatial Software, Inc.), PRISMA-toolbox (Planetek) and EnMap-Box (GFZ), but only the former – that is commercial - provides for geocoding refinement and no geocoding for L1. To fill this lack with open SW, we realized a seamless procedure starting from standard HDF files to build the L1 geocoded and the L2 geocoding-refined products, in addition, regridding and smoothing routines are offered. The tool is based on open source libraries: prismaread for data conversion, cube merging and basic metadata gathering, and AROSICS and gdal for the geocoding (refinement of L2 or process of L1). For L1 information useful for atmospheric correction (e.g. sun and sensors view angles, band centers, etc.) are also extracted from HDF metadata. The regridding step is added both to L1 and L2 image to enable for multi-temporal image stacks. Last step is the spectral smoothing that is straightforwardly applied to the L2 process chain while it is applied to L1 chain only after atmospheric correction. Since the workflow takes advantages of different libraries and languages (R, Python) an Rstudio Server docker has been created together with a GitHub code repository, to create an easy-to-use distribution which do not require to solve all the dependencies of all libraries used.
+
+---
+
+
 PRISTAR-GEOSPEC tool can help you in:
 - importing L0, L1, L2 PRISMA products;
 - extracting and cleaning cloud mask for PRISMA;
