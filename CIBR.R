@@ -1,5 +1,8 @@
 #prova
+prova <- terra::rast("//10.0.1.243/projects/2023_PRIN_REMOTE_C/3-DATA/raster/PRISMA/PRS_L1_STD_OFFL_20240715102415_20240715102419_0001/Atcor/CIBR_PRS_L1_STD_OFFL_20240715102415_interpolated.tif")
 
+#PRISMA <- terra::rast("//10.0.1.243/nr_data/3_rs_data/PRISMA/Piacenza/PRS_L1_STD_OFFL_20250704102730_20250704102734_0001/ATCOR/1130WV/PRS_L1_STD_OFFL_20250704_geocoded_ENVI_atm.bsq")
+PRISMA <- terra::rast("//10.0.1.243/nr_data/3_rs_data/PRISMA/Piacenza/PRS_L1_STD_OFFL_20240715102415_20240715102419_0001/Atcor/PRS_L1_STD_OFFL_20240715102415_ENVI_atm_FixVis.bsq")
 
 CIBR <- function(rho_x,rho_y,rho_z,lambda_x,lambda_y,lambda_z){
   library(terra)
@@ -103,13 +106,16 @@ Soil <- Soil_CIBR(PRISMA_img = PRISMA)
 VegW <- VegW_CIBR(PRISMA_img = PRISMA)
 
 
-CIBR_stack <- c(LCb,RE,Soil,VegW)
-names(CIBR_stack) <- c("LCb","RE","Soil","VegW")
+CIBR_stack <- c(RE,VegW,LCb,Soil)
+names(CIBR_stack) <- c("RE","VegW","LCb","Soil")
+
+# terra::writeRaster(CIBR_stack,
+#                    "//10.0.1.243/nr_data/3_rs_data/PRISMA/Piacenza/PRS_L1_STD_OFFL_20250704102730_20250704102734_0001/CIBR/CIBR_stack.tif",
+#                    overwrite=T)
 
 terra::writeRaster(CIBR_stack,
-                   "//10.0.1.243/nr_data/3_rs_data/PRISMA/Piacenza/PRS_L1_STD_OFFL_20250704102730_20250704102734_0001/CIBR/CIBR_stack.tif",
+                   "//10.0.1.243/nr_data/3_rs_data/PRISMA/Piacenza/PRS_L1_STD_OFFL_20240715102415_20240715102419_0001/CIBR_calcolati_260109/CIBR_stack.tif",
                    overwrite=T)
-
 
 
 
