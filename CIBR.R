@@ -97,6 +97,11 @@ Soil_CIBR <- function(PRISMA_img){
               lambda_z = lambda_z))
 }
 
+LCb <- LCb_CIBR(PRISMA_img = PRISMA)
+RE <- RE_CIBR(PRISMA_img = PRISMA)
+Soil <- Soil_CIBR(PRISMA_img = PRISMA)
+VegW <- VegW_CIBR(PRISMA_img = PRISMA)
+
 
 CIBR_stack <- c(LCb,RE,Soil,VegW)
 names(CIBR_stack) <- c("LCb","RE","Soil","VegW")
