@@ -92,10 +92,17 @@ if __name__ == "__main__":
     #for file in os.listdir(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here"):
     #    if file.endswith(".he5"):
     #        inputfile = os.path.join(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here",file)
+    file_path = '/space/config.txt'
 
-    for file in os.listdir("/space/put_PRISMA_he5_and_S2_tif_here"):
+    with open(file_path, 'r') as file:
+      lines = file.readlines()
+      file_content = ''.join(lines)
+
+    print(file_content)
+
+    for file in os.listdir(file_content):
         if file.endswith(".he5") & file.startswith("PRS"):
-            inputfile = os.path.join("/space/put_PRISMA_he5_and_S2_tif_here",file)
+            inputfile = os.path.join(file_content,file)
 
 
     angle = read_PRISMA_vaa(inputfile)

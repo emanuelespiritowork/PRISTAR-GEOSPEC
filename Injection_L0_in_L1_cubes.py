@@ -37,11 +37,19 @@ import pandas as pd
 
 
 # open the PRISMA file
-path = "/space/put_PRISMA_he5_and_S2_tif_here/"
+file_path = '/space/config.txt'
+
+with open(file_path, 'r') as file:
+  lines = file.readlines()
+  file_content = ''.join(lines)
+
+print(file_content)
+    
+path = file_content
 #path = "C:/Users/Emanuele/Desktop/PRISMA_code/put_PRISMA_he5_and_S2_tif_here/"
 
-f_vnir = h5py.File(path+'data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.h5', 'r')#prendo .he5 che contiene VNIR ed S11 nel nome
-f_swir = h5py.File(path+'data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5', 'r')#prendo .he5 che contiene SWIR ed S11 nel nome 
+f_vnir = h5py.File(os.path.join(path,'data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.h5'), 'r')#prendo .he5 che contiene VNIR ed S11 nel nome
+f_swir = h5py.File(os.path.join(path,'data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5'), 'r')#prendo .he5 che contiene SWIR ed S11 nel nome 
 
 
 # In[ ]:
