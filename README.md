@@ -41,16 +41,16 @@ PRISTAR-GEOSPEC tool can help you in:
 
 # Other references
 
-#https://github.com/GFZ/arosics
-#distributed under Apache-2.0 license
-#https://gdal.org/en/stable
-#distributed under MIT license
-#Lorenzo Busetto @ CNR-IREA for prismaread package 
-#https://github.com/IREA-CNR-MI/prismaread
-#distributed under GPL-3.0 license
-#https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
-#https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py
-#distributed under GPL-3.0 license
+#AROSICS: https://github.com/GFZ/arosics distributed under Apache-2.0 license
+
+#GDAL: https://gdal.org/en/stable distributed under MIT license
+
+#Lorenzo Busetto @ CNR-IREA for prismaread package https://github.com/IREA-CNR-MI/prismaread distributed under GPL-3.0 license
+
+#Giandomenico De Luca @ CNR-IBE https://doi.org/10.1016/j.isprsjprs.2024.07.003
+https://doi.org/10.5281/zenodo.11547257
+
+#Yulun Wu @ Ottawa University https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py distributed under GPL-3.0 license
 
 # HOW TO INSTALL IT
 Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.3.0-alpha into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
