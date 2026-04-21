@@ -2,6 +2,8 @@
 <img width="1808" height="214" alt="logo_CNR_esteso" src="https://github.com/user-attachments/assets/e9fcb8e5-e10f-47df-82ce-ada344309316" >
 <img width="200" height="80" alt="image" src="https://github.com/user-attachments/assets/51eefba9-0e0c-4789-9c15-0aa43b98e723" >
 <img width="150" height="80" alt="image" src="https://github.com/user-attachments/assets/293419e9-1c48-4afc-868a-9fb82d6e3f33" >
+<img width="200" height="80" alt="image" src="https://github.com/user-attachments/assets/ba5df6d6-2df0-4114-9c9f-2258bff6ab6f" />
+<img width="230" height="90" alt="image" src="https://github.com/user-attachments/assets/4811e70e-1a9e-4cba-b5d3-cf6339ed994a" />
 
 
 ---
