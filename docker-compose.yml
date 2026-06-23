@@ -1,0 +1,20 @@
+services:
+  rstudio:
+    image: emanuelespiritowork/pristar-geospec:0.3
+    container_name: pristar-geospec
+    ports: ["8787:8787"]
+    environment:
+      DISABLE_AUTH: true
+    mem_limit: ${MEM_LIMIT}
+    memswap_limit: ${MEM_LIMIT}
+    cpus: ${CPUS}
+    volumes:
+      - ${DATA_PATH}:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  isofit:
+    image: jammont/isofit:latest
+    container_name: isofit
+    command: sleep infinity
+    volumes:
+      - ${DATA_PATH}:/data

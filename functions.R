@@ -800,3 +800,21 @@ add_PRISMA_metadata <- function(name_of_current_output_folder,
                      overwrite = T)
   
 }
+
+#_____________________________________________________________________
+#run_ISOFIT ----
+#_____________________________________________________________________
+
+run_ISOFIT <- function(rdn, loc, obs, out_dir) {
+    cmd <- sprintf(
+        "docker exec isofit bash -c '
+      isofit apply_oe \
+        %s %s %s %s ang \
+        --surface_path %s/configs/surface.json \
+        --emulator_base $(isofit path srtmnet --key file) \
+        --n_cores 10 --presolve
+    '",
+        rdn, loc, obs, out_dir, out_dir
+    )
+    system(cmd)  # blocks until done
+}
