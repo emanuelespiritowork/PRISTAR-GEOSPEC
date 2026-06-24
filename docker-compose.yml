@@ -11,6 +11,7 @@ services:
     volumes:
       - ${DATA_PATH}:/data
       - /var/run/docker.sock:/var/run/docker.sock
+    command: /init
 
   isofit:
     image: jammont/isofit:latest
