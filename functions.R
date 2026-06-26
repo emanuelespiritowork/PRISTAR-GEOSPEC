@@ -109,7 +109,8 @@ check_file_chain <- function(out_folder,
 #_____________________________________________________________________
 prismaread_function <- function(product_type, 
                                 he5_file, 
-                                out_folder
+                                out_folder,
+                                root_folder
                                 ){
   
   if(product_type == "L1"){
@@ -149,16 +150,24 @@ prismaread_function <- function(product_type,
     overwrite = T,
     ATCOR = ATCOR
   )
+  
+  if(product_type == "L1"){
+    angle_file_path <- base::list.files(path = out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
+    atcor_parameters(angle_file_path, root_folder)
+  }
+  
 }
 
 #_____________________________________________________________________
 #atcor and prisma_angle ----
 #_____________________________________________________________________
-atcor_parameters <- function(angle_file_path
+atcor_parameters <- function(angle_file_path,
+                             root_folder
                              ){
-  
+  cat(x = root_folder,
+      file = '/config_folder/angle_config.txt')
   prismaread_angle_file <- utils::read.table(angle_file_path, header =T)
-  PRISMA_angle_command <- base::paste0("python"," ","/space/PRISMA_angle.py")
+  PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
   sensor_angles <- base::system(PRISMA_angle_command, intern = TRUE)[[2]]
   
   sensor_zenith <- strsplit(sensor_angles,",")[[1]][1]
@@ -187,6 +196,14 @@ atcor_parameters <- function(angle_file_path
   atcor_readme <- "Azimuth angles range = [0,360]Deg. Zenith angles range = [0,90]Deg"
   
   write(atcor_readme,paste0(base::dirname(angle_file_path),"/ATCOR/atcor_readme.txt"))
+}
+
+#isofit atmospheric correction ----
+isofit_atcor <- function(name_of_current_output_folder, input_file_path, PRISMA_wvl_info){
+  #read the file in GTiff format
+  raster_read <- terra::rast(input_file_path)
+  wvl_info <- tidytable::fread() 
+  
 }
 
 #_____________________________________________________________________
@@ -326,9 +343,9 @@ coregistration_to_s2 <- function(s2_file,
   single_band_image_to_coregister <- coreg_proj_path_52
   multiband_image_to_coregister <- coreg_proj_path
   if(product_type == "L0"){
-    arosics_local_path <- base::paste0("python"," ","/space/arosics_local_L0.py")
+    arosics_local_path <- base::paste0("python"," ","/config_folder/arosics_local_L0.py")
   }else{
-    arosics_local_path <- base::paste0("python"," ","/space/arosics_local.py")
+    arosics_local_path <- base::paste0("python"," ","/config_folder/arosics_local.py")
   }
   
   output_directory <- coreg_out_folder

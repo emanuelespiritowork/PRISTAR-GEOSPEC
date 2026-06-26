@@ -23,7 +23,7 @@
 regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
 full_230_bands <- T
 PRS_band_for_coreg <- 52
-shift <- T
+shift <- F
 shift_x <- -8000
 shift_y <- 0
 n_threads <- 7
@@ -31,15 +31,15 @@ n_threads <- 7
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read")
-#elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho,"addmetadata"
+procedure_order <- c("read","coreg")
+#elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho,"addmetadata", isofit
 
 #_____________________________________________________________________
 # Main -----
 #_____________________________________________________________________
-source("/space/functions.R")
+source("/config_folder/functions.R")
 #input folder identification
-root_folders <- list.dirs(path = "/space/put_PRISMA_he5_and_S2_tif_here",
+root_folders <- list.dirs(path = "/space",
                           recursive = F)
 
 PRISTAR_processing <- function(root_folder){
@@ -48,8 +48,7 @@ PRISTAR_processing <- function(root_folder){
              recursive = F,
              showWarnings = T)
   
-  cat(x = root_folder,
-        file = "/space/config.txt")
+  
   
   #1.1 identify file paths ----
   he5_path <- base::list.files(path = root_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
@@ -116,7 +115,7 @@ PRISTAR_processing <- function(root_folder){
       if(identical(he5_path,character(0))){
         stop(paste0("No he5 file found in ", root_folder))
       }else{
-        prismaread_function(product_type, he5_path, unchained_out_folder)
+        prismaread_function(product_type, he5_path, unchained_out_folder, root_folder)
       }
     }
     
@@ -139,31 +138,17 @@ PRISTAR_processing <- function(root_folder){
       cloud_smooth <- T
     }
     
-    ##1.3.1.4 "atcor" operation ----
-    if(current_operation == "atcor"){
-      print("ATCOR")
-      
-      if(product_type == "L0"){
-        stop("Generation of geometry angles not of the L0 product but to the originary L1 product")
-      }
-      
-      angle_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
-      if(identical(he5_path,character(0)) | identical(angle_file_path,character(0))){
-        stop(paste0("Lacking either .he5 in the folder ", root_folder,"or _HCO.ang in the folder ",unchained_out_folder))
-      }else{
-        atcor_parameters(angle_file_path)
-        #when atcor will be implemented in this procedure, here you will find and atcor will be in 
-        #the next operations category 
-      }
-    }
-    
   }
   
   ##1.3.2 execute chained operations ----
-  PRISMA_config <- tidytable::fread(base::paste0("/space/PRISMA_spectral_configuration.csv")) |>
+  PRISMA_wvl_info <- tidytable::fread(list.files(path = unchained_out_folder,
+                                                 pattern = "*.wvl$",
+                                                 full.names = T))
+  
+  PRISMA_config <- tidytable::fread(base::paste0("/config_folder/PRISMA_spectral_configuration.csv")) |>
     tidytable::mutate(band_row = tidytable::row_number()) 
   
-  PRISMA_bad_bands_table <- tidytable::fread(base::paste0("/space/PRISMA_band_selections.csv")) |>
+  PRISMA_bad_bands_table <- tidytable::fread(base::paste0("/config_folder/PRISMA_band_selections.csv")) |>
     tidytable::filter(BB_SUPER_V3 == 1)
   
   all_wvl <- PRISMA_config |> tidytable::pull(center)
@@ -246,6 +231,23 @@ PRISTAR_processing <- function(root_folder){
                             metadata_file_path = input_file_path,
                             all_wvl = all_wvl,
                             cloud = cloud_smooth)
+      }
+      
+      ##1.3.2.6 "isofit" operation ----
+      if(current_operation == "isofit"){
+        print("ISOFIT ATMOSPHERIC CORRECTION")
+        
+        if(product_type == "L0"){
+          stop("Generation of geometry angles not of the L0 product but to the originary L1 product")
+        }
+        
+        if(product_type == "L2"){
+          stop("The L2 product is already in reflectance, so do not need any atcor.")
+        }
+        
+        isofit_atcor(name_of_current_output_folder = name_of_current_output_folder,
+               input_file_path = input_file_path,
+               PRISMA_wvl_info = PRISMA_wvl_info)
       }
       
     }

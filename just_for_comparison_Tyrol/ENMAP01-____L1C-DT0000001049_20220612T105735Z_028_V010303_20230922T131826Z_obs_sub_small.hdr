@@ -1,0 +1,10 @@
+ENVI
+samples = 10
+lines = 10
+bands = 11
+header offset = 0
+file type = ENVI Standard
+data type = 5
+interleave = bip
+byte order = 0
+band_names = { Path length (m) , To-sensor azimuth (0 to 360 degrees CW from N) , To-sensor zenith (0 to 90 degrees from zenith) , To-sun azimuth (0 to 360 degrees CW from N) , To-sun zenith (0 to 90 degrees from zenith) , Solar phase , Slope , Aspect , Cosine(i) , UTC Time , Earth-sun distance (AU) }

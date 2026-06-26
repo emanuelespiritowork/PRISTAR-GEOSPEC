@@ -92,7 +92,7 @@ if __name__ == "__main__":
     #for file in os.listdir(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here"):
     #    if file.endswith(".he5"):
     #        inputfile = os.path.join(r"C:\Users\Emanuele\Desktop\PRISMA_code\put_PRISMA_he5_and_S2_tif_here",file)
-    file_path = '/space/config.txt'
+    file_path = '/config_folder/angle_config.txt'
 
     with open(file_path, 'r') as file:
       lines = file.readlines()
