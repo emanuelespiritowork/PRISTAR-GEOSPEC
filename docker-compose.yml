@@ -12,6 +12,7 @@ services:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
     command: /init
+    networks: [satellite_net]
 
   isofit:
     image: lorenzopari/isofit-api:latest
@@ -21,6 +22,7 @@ services:
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
+    networks: [satellite_net]
       
   arosics:
     image: lorenzopari/arosics:1.13.2
@@ -29,4 +31,9 @@ services:
       - "${PORT_arosics}:8000"
     volumes:
       - ${IMAGES_PATH}:/space
-      - ${CONFIG_PATH}:/config_folder      
+    networks: [satellite_net]
+      - ${CONFIG_PATH}:/config_folder     
+      
+      
+networks:
+  satellite_net:
