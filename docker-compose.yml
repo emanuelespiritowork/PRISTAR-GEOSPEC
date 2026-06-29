@@ -2,7 +2,7 @@ services:
   rstudio:
     image: emanuelespiritowork/pristar-geospec:0.3
     container_name: pristar-geospec
-    ports: ["8787:8787"]
+    ports: ["${PORT_rstudio}:8787"]
     environment:
       DISABLE_AUTH: true
     mem_limit: ${MEM_LIMIT}
@@ -17,7 +17,7 @@ services:
     image: lorenzopari/isofit-api:latest
     container_name: PRISTAR_isofit
     ports:
-      - "8001:8000"
+      - "${PORT_isofit}:8000"
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -26,7 +26,7 @@ services:
     image: lorenzopari/arosics:1.13.2
     container_name: PRISTAR_arosics
     ports:
-      - "8002:8000"
+      - "${PORT_arosics}:8000"
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder      
