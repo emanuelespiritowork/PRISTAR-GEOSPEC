@@ -17,8 +17,6 @@ services:
   isofit:
     image: lorenzopari/isofit-api:latest
     container_name: PRISTAR_isofit
-    ports:
-      - "${PORT_isofit}:8000"
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -27,12 +25,10 @@ services:
   arosics:
     image: lorenzopari/arosics:1.13.2
     container_name: PRISTAR_arosics
-    ports:
-      - "${PORT_arosics}:8000"
     volumes:
       - ${IMAGES_PATH}:/space
-    networks: [satellite_net]
-      - ${CONFIG_PATH}:/config_folder     
+      - ${CONFIG_PATH}:/config_folder 
+    networks: [satellite_net]    
       
       
 networks:
