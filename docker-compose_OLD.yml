@@ -11,10 +11,11 @@ services:
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
-    command: /init
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: bash -c "apt-get update && apt-get install -y docker.io && chmod 666 /var/run/docker.sock && /init"
 
   isofit:
-    image: lorenzopari/isofit-api:latest
+    image: jammont/isofit:latest
     container_name: PRISTAR_isofit
     ports:
       - "8001:8000"
@@ -23,7 +24,7 @@ services:
       - ${CONFIG_PATH}:/config_folder
       
   arosics:
-    image: lorenzopari/arosics:1.13.2
+    image: jammont/isofit:latest
     container_name: PRISTAR_arosics
     ports:
       - "8002:8000"
