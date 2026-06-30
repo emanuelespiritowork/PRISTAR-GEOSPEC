@@ -12,7 +12,7 @@ services:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
     command: /init
-    networks: [satellite_net]
+    networks: [PRISTAR_net]
 
   isofit:
     image: lorenzopari/isofit-api:latest
@@ -20,7 +20,7 @@ services:
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
-    networks: [satellite_net]
+    networks: [PRISTAR_net]
       
   arosics:
     image: lorenzopari/arosics:1.13.2
@@ -28,8 +28,8 @@ services:
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder 
-    networks: [satellite_net]    
+    networks: [PRISTAR_net]    
       
       
 networks:
-  satellite_net:
+  PRISTAR_net:
