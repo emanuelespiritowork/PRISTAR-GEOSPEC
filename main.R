@@ -27,12 +27,13 @@ shift <- F
 shift_x <- -8000
 shift_y <- 0
 n_threads <- 7
+dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg")
-#elements: inject, read, atcor, cloud, coreg, regrid, crop, smooth, ortho,"addmetadata", isofit
+procedure_order <- c("read","coreg","isofit")
+#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,"addmetadata", isofit
 
 #_____________________________________________________________________
 # Main -----
@@ -53,8 +54,8 @@ PRISTAR_processing <- function(root_folder){
   #1.1 identify file paths ----
   he5_path <- base::list.files(path = root_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
   s2_path <- base::list.files(path = root_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
-  dem_path <- base::list.files(path = "/space/DEM", pattern = "\\.tif$", full.names = T)
-  master_image_path <- base::list.files("/space/master_image_for_regridding/", full.names = T, pattern = "\\.tif$")
+  dem_path <- base::list.files(path = "/config_folder/DEM", pattern = "dtm", full.names = T)
+  master_image_path <- base::list.files("/config_folder/master_image_for_regridding/", full.names = T, pattern = "\\.tif$")
   
   #1.2 identify product_type ----
   product_type <- identify_product_type(he5_path)
@@ -115,7 +116,7 @@ PRISTAR_processing <- function(root_folder){
       if(identical(he5_path,character(0))){
         stop(paste0("No he5 file found in ", root_folder))
       }else{
-        prismaread_function(product_type, he5_path, unchained_out_folder, root_folder)
+        prismaread_function(product_type, he5_path, unchained_out_folder, root_folder, dem_root_path)
       }
     }
     
@@ -145,12 +146,12 @@ PRISTAR_processing <- function(root_folder){
                                                  pattern = "*.wvl$",
                                                  full.names = T))
   
+  #DA RIMUOVERE E SOSTITUIRE CON LA RIGA SOPRA PERCHE LE WVL POSSONO CAMBIARE DA IMMAGINE AD IMMAGINE
+  #poi alla fine con lo smoothing vogliono che siano tutte la stessa 
   PRISMA_config <- tidytable::fread(base::paste0("/config_folder/PRISMA_spectral_configuration.csv")) |>
     tidytable::mutate(band_row = tidytable::row_number()) 
-  
   PRISMA_bad_bands_table <- tidytable::fread(base::paste0("/config_folder/PRISMA_band_selections.csv")) |>
     tidytable::filter(BB_SUPER_V3 == 1)
-  
   all_wvl <- PRISMA_config |> tidytable::pull(center)
   
   number_of_chained_operations <- length(select_chained_operations)
@@ -247,7 +248,10 @@ PRISTAR_processing <- function(root_folder){
         
         isofit_atcor(name_of_current_output_folder = name_of_current_output_folder,
                input_file_path = input_file_path,
-               PRISMA_wvl_info = PRISMA_wvl_info)
+               PRISMA_wvl_info = PRISMA_wvl_info, 
+               root_folder = root_folder,
+               he5_path = he5_path)
+        
       }
       
     }

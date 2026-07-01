@@ -110,7 +110,8 @@ check_file_chain <- function(out_folder,
 prismaread_function <- function(product_type, 
                                 he5_file, 
                                 out_folder,
-                                root_folder
+                                root_folder,
+                                dem_root_path
                                 ){
   
   if(product_type == "L1"){
@@ -156,11 +157,10 @@ prismaread_function <- function(product_type,
     atcor_parameters(angle_file_path, root_folder)
   }
   
+  
+  
 }
 
-#_____________________________________________________________________
-#atcor and prisma_angle ----
-#_____________________________________________________________________
 atcor_parameters <- function(angle_file_path,
                              root_folder
                              ){
@@ -199,11 +199,183 @@ atcor_parameters <- function(angle_file_path,
 }
 
 #isofit atmospheric correction ----
-isofit_atcor <- function(name_of_current_output_folder, input_file_path, PRISMA_wvl_info){
+isofit_atcor <- function(name_of_current_output_folder, 
+                         input_file_path, 
+                         PRISMA_wvl_info, 
+                         root_folder,
+                         he5_file_path){
+  #####################
+  ####### Creation of RDN file
+  #####################
+  
   #read the file in GTiff format
   raster_read <- terra::rast(input_file_path)
-  wvl_info <- tidytable::fread() 
+  #convert in ENVI format
+  rdn_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_rdn.envi",basename(input_file_path)))
+  terra::writeRaster(raster_read,
+                     rdn_file_path,
+                     overwrite = T)
+  #fill the hdr with metadata
+  band_names <- PRISMA_wvl_info$band
+  band_wl <- PRISMA_wvl_info$wl
+  band_fwhm <- PRISMA_wvl_info$fwhm
   
+  rdn_hdr_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_rdn.hdr",basename(input_file_path)))
+  
+  cat(paste0("band names = {",paste0("B",band_names, collapse = ", "), "}"),
+      file = rdn_hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("wavelength = {",paste0(band_wl, collapse = ", "), "}"),
+      file = rdn_hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("wavelength units = Nanometers"),
+      file = rdn_hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("fwhm = {",paste0(band_fwhm, collapse = ", "), "}"),
+      file = rdn_hdr_file_path,
+      append = T)
+  
+  #remove the xml file
+  file.remove(list.files(name_of_current_output_folder,
+                         pattern = "*.xml$",
+                         full.names = T))
+  
+  #####################
+  ####### Creation of LOC file
+  #####################
+  raster_read_wgs <- terra::project(raster_read, "+init=EPSG:4326")
+  longitude_wgs <- terra::init(raster_read_wgs, "x")
+  latitude_wgs <- terra::init(raster_read_wgs, "y")
+  
+  longitude <- terra::project(longitude_wgs, terra::crs(raster_read))
+  latitude <- terra::project(latitude_wgs, terra::crs(raster_read))
+  
+  longitude_resample <- terra::resample(longitude, raster_read)
+  longitude_crop <- terra::crop(longitude_resample, raster_read)
+  longitude_mask <- terra::mask(longitude_crop, raster_read[[1]])
+  
+  latitude_resample <- terra::resample(latitude, raster_read)
+  latitude_crop <- terra::crop(latitude_resample, raster_read)
+  latitude_mask <- terra::mask(latitude_crop, raster_read[[1]])
+  
+  dem_folder <- "/config_folder/DEM"
+  
+  dtm <- terra::rast(list.files(path = dem_folder,
+                                pattern = "dtm",
+                                full.names = T,
+                                recursive = F))
+  
+  
+  dtm_resample <- terra::resample(dtm, raster_read)
+  dtm_crop <- terra::crop(dtm_resample, raster_read)
+  dtm_mask <- terra::mask(dtm_crop, raster_read[[1]])
+  
+  loc_raster <- c(longitude_mask, 
+                  latitude_mask,
+                  dtm_mask)
+  
+  loc_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_loc.envi",basename(input_file_path)))
+  terra::writeRaster(loc_raster,
+                     loc_file_path,
+                     overwrite = T)
+  
+  file.remove(list.files(name_of_current_output_folder,
+                         pattern = "*.xml$",
+                         full.names = T))
+  
+  #####################
+  ####### Creation of OBS file
+  #####################
+  #angles are in
+  PRISMA_angles <- tidytable::fread(paste0(root_folder, "/PRISTAR_processing/0_read/ATCOR/all_angles_file.csv"))
+  
+  sunzen <- terra::rast(raster_read[[1]], 
+                              vals = PRISMA_angles$sunzen,
+                              names = "sunzen")
+  
+  sunzen_resample <- terra::resample(sunzen, raster_read)
+  sunzen_crop <- terra::crop(sunzen_resample, raster_read)
+  sunzen_mask <- terra::mask(sunzen_crop, raster_read[[1]])
+  
+  sunaz <- terra::rast(raster_read[[1]], 
+                       vals = PRISMA_angles$sunaz,
+                       names = "sunaz")
+  
+  sunaz_resample <- terra::resample(sunaz, raster_read)
+  sunaz_crop <- terra::crop(sunaz_resample, raster_read)
+  sunaz_mask <- terra::mask(sunaz_crop, raster_read[[1]])
+  
+  senaz <- terra::rast(raster_read[[1]], 
+                       vals = PRISMA_angles$sensor_azimuth,
+                       names = "senaz")
+  
+  senaz_resample <- terra::resample(senaz, raster_read)
+  senaz_crop <- terra::crop(senaz_resample, raster_read)
+  senaz_mask <- terra::mask(senaz_crop, raster_read[[1]])
+  
+  senzen <- terra::rast(raster_read[[1]], 
+                        vals = PRISMA_angles$sensor_zenith,
+                        names = "senzen")
+  
+  senzen_resample <- terra::resample(senzen, raster_read)
+  senzen_crop <- terra::crop(senzen_resample, raster_read)
+  senzen_mask <- terra::mask(senzen_crop, raster_read[[1]])
+  
+  utc <- terra::rast(raster_read[[1]], 
+                        vals = lubridate::hour(PRISMA_angles$date) + 1/60 * lubridate::minute(PRISMA_angles$date) + 1/3600 *  lubridate::second(PRISMA_angles$date),
+                        names = "utc")
+  
+  utc_resample <- terra::resample(utc, raster_read)
+  utc_crop <- terra::crop(utc_resample, raster_read)
+  utc_mask <- terra::mask(utc_crop, raster_read[[1]])
+  
+  aspect <- terra::rast(list.files(path = dem_folder,
+                                   pattern = "aspect",
+                                   full.names = T,
+                                   recursive = F))
+  
+  aspect_resample <- terra::resample(aspect, raster_read)
+  aspect_crop <- terra::crop(aspect_resample, raster_read)
+  aspect_mask <- terra::mask(aspect_crop, raster_read[[1]])
+  
+  slope <- terra::rast(list.files(path = dem_folder,
+                                  pattern = "slope",
+                                  full.names = T,
+                                  recursive = F))
+  
+  slope_resample <- terra::resample(slope, raster_read)
+  slope_crop <- terra::crop(slope_resample, raster_read)
+  slope_mask <- terra::mask(slope_crop, raster_read[[1]])
+  
+  cos_phase_mask <- cos(sunzen_mask) * cos(senzen_mask) + sin(sunzen_mask) * sin(senzen_mask) * cos(sunaz_mask - senaz_mask)
+  phase_mask <- acos(cos_phase_mask)
+  phase_deg_mask <- phase_mask * 180 / pi
+  names(phase_deg_mask) <- "phase_deg"
+  
+  cos_local_solar_ill_angle_mask <- cos(sunzen_mask) * cos(slope_mask) + sin(sunzen_mask) * sin(slope_mask) * cos(sunaz_mask - aspect_mask)
+  names(cos_local_solar_ill_angle_mask) <- "cos(i)"
+  
+  h5_read <- h5ls(he5_path)
+  
+  obs_raster <- c(path, #lack
+                  senaz_mask,
+                  senzen_mask,
+                  sunaz_mask,
+                  sunzen_mask,
+                  phase_deg_mask,
+                  slope_mask,
+                  aspect_mask,
+                  cos_local_solar_ill_angle_mask,
+                  utc_mask,
+                  earth_sun_distance_mask) #lack
+  
+  obs_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_obs.envi",basename(input_file_path)))
+  terra::writeRaster(obs_raster,
+                     obs_file_path,
+                     overwrite = T)
 }
 
 #_____________________________________________________________________
@@ -354,7 +526,13 @@ coregistration_to_s2 <- function(s2_file,
   #IMPROVE: potrei usare AROSICS da riga di comando?
   arosics_run_command <- base::paste(arosics_local_path, "-v -r", single_band_reference_image, "-t", single_band_image_to_coregister, "-l", base::normalizePath(path=base::paste(output_directory, "/", "AROSICS_coregistration_info.json", sep=""), winslash="/", mustWork=FALSE), "-m", base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), "-g", base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE), sep=" ")
   # run AROSICS to get GCPs
-  base::system(arosics_run_command)
+  
+  result_arosics <- httr2::request("http://arosics:8000/run") |>
+    httr2::req_body_json(list(command = arosics_run_command)) |>
+    httr2::req_perform() 
+  
+  # base::system(arosics_run_command)
+  
   # import GCPs
   #gcp_lines <- base::readLines(con=base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE))
   # generate GCP line to be used in GDAL
@@ -594,13 +772,24 @@ coregistration_to_s2 <- function(s2_file,
     # create VRT with GCP
     GDAL_VRT_run_command <- base::paste("gdal_translate -q -of VRT", gcp_args, multiband_image_to_coregister, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=FALSE), sep=" ")
     writeLines(GDAL_VRT_run_command, base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))
-    base::system(paste0("sh ", base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep="")))
+    cmd_gdal_translate <- paste0("sh ", base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))
+    
+    result_gdal_translate <- httr2::request("http://arosics:8000/run") |>
+      httr2::req_body_json(list(command = cmd_gdal_translate)) |>
+      httr2::req_perform() 
+    
+    # base::system(paste0("sh ", base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep="")))
     
     #GDAL_VRT_run_command <- base::paste("gdal_translate -q -of VRT", gcp_args, multiband_image_to_coregister, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=FALSE), sep=" ")
     #base::system(GDAL_VRT_run_command)
     # warp input image using second order polynomial
     GDAL_WARP_run_command <- base::paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 30 30 -t_srs", target_epsg, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file, sep=" ")
-    base::system(GDAL_WARP_run_command)
+    
+    result_gdalwarp <- httr2::request("http://arosics:8000/run") |>
+      httr2::req_body_json(list(command = GDAL_WARP_run_command)) |>
+      httr2::req_perform() 
+    
+    # base::system(GDAL_WARP_run_command)
   }
   
   
