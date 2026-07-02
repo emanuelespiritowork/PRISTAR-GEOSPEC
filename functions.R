@@ -75,9 +75,7 @@ check_folder_chain <- function(name_of_current_output_folder,
 #check_file_chain ----
 #_____________________________________________________________________
 check_file_chain <- function(out_folder, 
-                             name_of_current_output_folder
-                             ){
-  
+                             name_of_current_output_folder){
   if(name_of_current_output_folder == ""){
     folder <- out_folder
     file_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = T)
@@ -203,7 +201,8 @@ isofit_atcor <- function(name_of_current_output_folder,
                          input_file_path, 
                          PRISMA_wvl_info, 
                          root_folder,
-                         he5_file_path){
+                         he5_file_path,
+                         PRISMA_angle_info){
   #####################
   ####### Creation of RDN file
   #####################
@@ -289,11 +288,8 @@ isofit_atcor <- function(name_of_current_output_folder,
   #####################
   ####### Creation of OBS file
   #####################
-  #angles are in
-  PRISMA_angles <- tidytable::fread(paste0(root_folder, "/PRISTAR_processing/0_read/ATCOR/all_angles_file.csv"))
-  
   sunzen <- terra::rast(raster_read[[1]], 
-                              vals = PRISMA_angles$sunzen,
+                              vals = PRISMA_angle_info$sunzen,
                               names = "sunzen")
   
   sunzen_resample <- terra::resample(sunzen, raster_read)
@@ -301,7 +297,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   sunzen_mask <- terra::mask(sunzen_crop, raster_read[[1]])
   
   sunaz <- terra::rast(raster_read[[1]], 
-                       vals = PRISMA_angles$sunaz,
+                       vals = PRISMA_angle_info$sunaz,
                        names = "sunaz")
   
   sunaz_resample <- terra::resample(sunaz, raster_read)
@@ -309,7 +305,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   sunaz_mask <- terra::mask(sunaz_crop, raster_read[[1]])
   
   senaz <- terra::rast(raster_read[[1]], 
-                       vals = PRISMA_angles$sensor_azimuth,
+                       vals = PRISMA_angle_info$sensor_azimuth,
                        names = "senaz")
   
   senaz_resample <- terra::resample(senaz, raster_read)
@@ -317,7 +313,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   senaz_mask <- terra::mask(senaz_crop, raster_read[[1]])
   
   senzen <- terra::rast(raster_read[[1]], 
-                        vals = PRISMA_angles$sensor_zenith,
+                        vals = PRISMA_angle_info$sensor_zenith,
                         names = "senzen")
   
   senzen_resample <- terra::resample(senzen, raster_read)
@@ -325,7 +321,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   senzen_mask <- terra::mask(senzen_crop, raster_read[[1]])
   
   utc <- terra::rast(raster_read[[1]], 
-                        vals = lubridate::hour(PRISMA_angles$date) + 1/60 * lubridate::minute(PRISMA_angles$date) + 1/3600 *  lubridate::second(PRISMA_angles$date),
+                        vals = lubridate::hour(PRISMA_angle_info$date) + 1/60 * lubridate::minute(PRISMA_angle_info$date) + 1/3600 *  lubridate::second(PRISMA_angle_info$date),
                         names = "utc")
   
   utc_resample <- terra::resample(utc, raster_read)
@@ -359,6 +355,11 @@ isofit_atcor <- function(name_of_current_output_folder,
   names(cos_local_solar_ill_angle_mask) <- "cos(i)"
   
   h5_read <- h5ls(he5_path)
+  mydata <- h5read(he5_path, "/mygroup/mydata")
+  
+  read_he5_terra <- terra::rast(he5_path)
+  
+  aux_sun_earth_distance <- terra::metags(read_he5_terra)
   
   obs_raster <- c(path, #lack
                   senaz_mask,
@@ -1005,6 +1006,84 @@ add_PRISMA_metadata <- function(name_of_current_output_folder,
                      # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                      overwrite = T)
   
+}
+
+#_____________________________________________________________________
+#naming_convention ----
+#_____________________________________________________________________
+naming_convention <- function(out_folder,
+                              input_file_path, 
+                              name_of_current_output_folder, 
+                              current_operation, 
+                              index_of_chained_operations, 
+                              PRISMA_angle_info,
+                              product_type){
+  
+  if(current_operation == "smooth"){
+    #spectral smoothing 
+    letter_to_add <- "S"
+  }
+  if(current_operation == "coreg"){
+    #coregistration to the S2
+    letter_to_add <- "C"
+  }
+  if(current_operation == "regrid"){
+    #regridding around the master image
+    letter_to_add <- "R"
+  }
+  if(current_operation == "ortho"){
+    #orthoprojection
+    letter_to_add <- "O"
+  }
+  if(current_operation == "crop"){
+    #trimming of the raster around the master image
+    letter_to_add <- "T"
+  }
+  if(current_operation == "add_metadata"){
+    #add metadata to the printed file
+    letter_to_add <- "M"
+  }
+  if(current_operation == "isofit"){
+    #atmospheric correction
+    letter_to_add <- "A"
+  }
+  
+  #STILL TO BE DISCUSSED
+  if(current_operation == "inject"){
+    #inject L0 into L1
+    letter_to_add <- "I"
+  }
+  
+  if(index_of_chained_operations > 1){
+    old_basename <- basename(input_file_path)
+    new_basename <- gsub("*.tif$", paste0(letter_to_add,".tif"),old_basename)
+    output_file_path <- paste0(name_of_current_output_folder,"/",new_basename)
+  }else{
+    input_file_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = T)
+    if(!identical(input_file_path,character(0))){
+      print("I take FULL_CLD.tif")
+    }
+    input_file_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = T)
+    if(!identical(input_file_path,character(0))){
+      print("I take FULL.tif")
+    }
+    date <- as.Date(PRISMA_angle_info$date)
+    time <- hms::as_hms(PRISMA_angle_info$date)
+    time_string <- paste0(as.POSIXlt(time)$hour,as.POSIXlt(time)$min,base::round(as.POSIXlt(time)$sec,0))
+    date_string <- gsub("-","",date)
+    datetime <- paste0(date_string,"T",time_string) 
+    
+    #in case the unchained "cloud" has been performed add also "F", i.e. fixing cloud mask
+    if(grepl(pattern = "FULL_CLD.tif",x = input_file_path)){
+      new_basename <- paste(c("PRS",product_type,datetime,paste0("F",letter_to_add)), collapse = "_")
+    }else{
+      new_basename <- paste(c("PRS",product_type,datetime,letter_to_add), collapse = "_")
+    }
+    output_file_path <- paste0(name_of_current_output_folder,"/",new_basename,".tif")
+    
+  }
+  
+  return(output_file_path)
 }
 
 #_____________________________________________________________________
