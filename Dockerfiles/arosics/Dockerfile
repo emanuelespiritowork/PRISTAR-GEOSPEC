@@ -23,6 +23,7 @@ RUN uv pip install \
         "pyproj>2.2.0" \
         "scikit-image>=0.21.0" \
         shapely \
+        h5py \
         "arosics>=1.3.0"
 
 RUN uv pip install fastapi "uvicorn[standard]"

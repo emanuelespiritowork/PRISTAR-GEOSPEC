@@ -58,7 +58,7 @@ RUN apt update -qq && DEBIAN_FRONTEND=noninteractive apt install -yq \
 RUN R --vanilla -e 'install.packages(c("pak"), repos = "https://cloud.r-project.org")'
 
 #Main packages and Github packages
-RUN R --vanilla -e 'pak::pkg_install(c("here", "remotes", "httr2", "optparse", "tidytable", "data.table", \
+RUN R --vanilla -e 'pak::pkg_install(c("here", "remotes", "httr2", "optparse", "tidytable", "data.table", "lubridate", "hms", \
                                        "sf", "terra", "exactextractr", "mmand", "tidyterra", "satellite", \
                                        "irea-cnr-mi/prismaread", "kamapu/spatialist")); pak::pak_cleanup(force = TRUE)'
 
