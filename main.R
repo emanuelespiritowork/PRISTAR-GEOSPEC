@@ -10,9 +10,9 @@
 
 #Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintanance of the Docker Container and any hardware-related solution #https://github.com/GFZ/arosics #distributed under Apache-2.0 license #https://gdal.org/en/stable #distributed under MIT license
 
-#Lorenzo Parigi @ CNR-IREA for smoothing procedure
+#Lorenzo Parigi @ CNR-IREA for smoothing procedure, new Docker structure, API and isofit incorporation 
 
-#Riccardo Canazza for advice in regrid procedure
+#Riccardo Canazza for advice  in regrid procedure
 
 #Yulun Wu @ University of Ottawa for PRISMA_angle.py code #https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py #distributed under GPL-3.0 license
 
@@ -32,8 +32,8 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg","isofit")
-#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,"addmetadata", isofit
+procedure_order <- c("read","cloud","coreg","isofit")
+#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________
 # Main -----
@@ -72,7 +72,7 @@ PRISTAR_processing <- function(root_folder){
   ##1.3.1 execute unchained operations ----
   select_unchained_operations <- procedure_order[procedure_order %in% c("read","cloud","atcor","inject")]
   select_chained_operations <- procedure_order[!(procedure_order %in% c("read","cloud","atcor","inject"))]
-  cloud_smooth <- F
+  cloud_present_in_stack <- F
   
   number_of_unchained_operations <- length(select_unchained_operations)
   if(number_of_unchained_operations > 0){
@@ -128,6 +128,10 @@ PRISTAR_processing <- function(root_folder){
         stop("Generation of cloud mask not relative to the L0 product but to the originary L1 product")
       }
       
+      if(product_type == "L2"){
+        stop("No generation of cloud mask for L2 product")
+      }
+      
       cloud_path <- base::list.files(path = unchained_out_folder, pattern = "\\_HCO_CLD.tif$", full.names = T, recursive = F)
       full_path <- base::list.files(path = unchained_out_folder, pattern = "\\_HCO_FULL.tif$", full.names = T, recursive = F)
       if(identical(cloud_path,character(0)) | identical(full_path,character(0))){
@@ -136,7 +140,7 @@ PRISTAR_processing <- function(root_folder){
         cloud_mask(cloud_path, full_path)
       }
       
-      cloud_smooth <- T
+      cloud_present_in_stack <- T
     }
     
   }
@@ -146,13 +150,15 @@ PRISTAR_processing <- function(root_folder){
                                                  pattern = "*.wvl$",
                                                  full.names = T))
   
-  #DA RIMUOVERE E SOSTITUIRE CON LA RIGA SOPRA PERCHE LE WVL POSSONO CAMBIARE DA IMMAGINE AD IMMAGINE
-  #poi alla fine con lo smoothing vogliono che siano tutte la stessa 
+  PRISMA_angle_info <- tidytable::fread(list.files(path = paste0(unchained_out_folder,"/ATCOR/"),
+                                                   pattern = "all_angles_file.csv",
+                                                   full.names = T))
+  
   PRISMA_config <- tidytable::fread(base::paste0("/config_folder/PRISMA_spectral_configuration.csv")) |>
     tidytable::mutate(band_row = tidytable::row_number()) 
+  
   PRISMA_bad_bands_table <- tidytable::fread(base::paste0("/config_folder/PRISMA_band_selections.csv")) |>
     tidytable::filter(BB_SUPER_V3 == 1)
-  all_wvl <- PRISMA_config |> tidytable::pull(center)
   
   number_of_chained_operations <- length(select_chained_operations)
   name_of_current_output_folder <- ""
@@ -162,8 +168,23 @@ PRISTAR_processing <- function(root_folder){
       current_operation <- select_chained_operations[index_of_chained_operations]
       
       ###1.3.2.0 check vector_chain ----
-      input_file_path <- check_file_chain(out_folder, name_of_current_output_folder)
-      name_of_current_output_folder <- check_folder_chain(name_of_current_output_folder, out_folder, current_operation)
+      name_of_current_output_folder <- check_folder_chain(name_of_current_output_folder = name_of_current_output_folder, 
+                                                          out_folder = out_folder, 
+                                                          current_operation = current_operation)
+      if(index_of_chained_operations == 1){
+        input_file_path <- get_starting_prisma_image(unchained_out_folder = unchained_out_folder,
+                                                     cloud_present_in_stack = cloud_present_in_stack)
+      }else{
+        input_file_path <- output_file_path
+      }
+      
+      output_file_path <- naming_convention(out_folder = out_folder,
+                                            input_file_path = input_file_path, 
+                                            name_of_current_output_folder = name_of_current_output_folder, 
+                                            current_operation = current_operation, 
+                                            index_of_chained_operations = index_of_chained_operations,
+                                            PRISMA_angle_info = PRISMA_angle_info, 
+                                            product_type = product_type)
       
       ##1.3.2.1 "coreg" or "ortho" operation ----
       if(current_operation == "coreg" | current_operation == "ortho"){
@@ -175,7 +196,17 @@ PRISTAR_processing <- function(root_folder){
           print("ORTHO")
         }
         
-        coregistration_to_s2(s2_path,input_file_path,name_of_current_output_folder,dem,dem_path,product_type,PRS_band_for_coreg,shift,shift_x,shift_y)
+        coregistration_to_s2(s2_path = s2_path,
+                             input_file_path = input_file_path,
+                             name_of_current_output_folder = name_of_current_output_folder,
+                             output_file_path = output_file_path,
+                             dem = dem,
+                             dem_path = dem_path,
+                             product_type = product_type,
+                             PRS_band_for_coreg = PRS_band_for_coreg,
+                             shift = shift,
+                             shift_x = shift_x,
+                             shift_y = shift_y)
         
         # if(validation_for_coreg){
         #   base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
@@ -203,35 +234,49 @@ PRISTAR_processing <- function(root_folder){
           resample_type <- "near"
         }
         
-        regrid_function(master_image_path, name_of_current_output_folder, input_file_path, resample_type)
+        regrid_function(master_image_path = master_image_path,
+                        name_of_current_output_folder = name_of_current_output_folder, 
+                        input_file_path = input_file_path, 
+                        output_file_path = output_file_path, 
+                        resample_type = resample_type)
       }
       
       ##1.3.2.3 "crop" operation ----
       if(current_operation == "crop"){
         print("CROP")
-        crop_function(master_image_path, name_of_current_output_folder, input_file_path)
+        crop_function(master_image_path = master_image_path,
+                      name_of_current_output_folder = name_of_current_output_folder, 
+                      input_file_path = input_file_path, 
+                      output_file_path = output_file_path)
       }
       
       ##1.3.2.4 "smooth" operation ----
       if(current_operation == "smooth"){
         print("SMOOTH")
-        smooth_spectra(smooth_file_path = input_file_path,
+        smooth_spectra(input_file_path = input_file_path,
                        PRISMA_config = PRISMA_config,
+                       PRISMA_wvl_info = PRISMA_wvl_info,
                        PRISMA_bad_bands_table = PRISMA_bad_bands_table,
                        name_of_current_output_folder = name_of_current_output_folder,
-                       cloud_smooth = cloud_smooth,
+                       cloud_present_in_stack = cloud_present_in_stack,
                        full_230_bands = full_230_bands,
-                       n_threads = n_threads
-        )
+                       n_threads = n_threads,
+                       output_file_path = output_file_path)
       }
       
       ##1.3.2.5 "addmetadata" operation ----
       if(current_operation == "addmetadata"){
         print("ADD PRISMA METADATA")
         add_PRISMA_metadata(name_of_current_output_folder = name_of_current_output_folder,
-                            metadata_file_path = input_file_path,
-                            all_wvl = all_wvl,
-                            cloud = cloud_smooth)
+                            input_file_path = input_file_path,
+                            PRISMA_wvl_info = PRISMA_wvl_info ,
+                            PRISMA_angle_info = PRISMA_angle_info,
+                            PRISMA_config = PRISMA_config,
+                            PRISMA_bad_bands_table = PRISMA_bad_bands_table,
+                            cloud_present_in_stack = cloud_present_in_stack,
+                            output_file_path = output_file_path,
+                            full_230_bands = full_230_bands)
+        
       }
       
       ##1.3.2.6 "isofit" operation ----
@@ -250,7 +295,8 @@ PRISTAR_processing <- function(root_folder){
                input_file_path = input_file_path,
                PRISMA_wvl_info = PRISMA_wvl_info, 
                root_folder = root_folder,
-               he5_path = he5_path)
+               he5_path = he5_path,
+               PRISMA_angle_info = PRISMA_angle_info)
         
       }
       

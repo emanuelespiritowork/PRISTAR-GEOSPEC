@@ -70,38 +70,6 @@ check_folder_chain <- function(name_of_current_output_folder,
   return(name_of_current_output_folder)
 }
 
-
-#_____________________________________________________________________
-#check_file_chain ----
-#_____________________________________________________________________
-check_file_chain <- function(out_folder, 
-                             name_of_current_output_folder){
-  if(name_of_current_output_folder == ""){
-    folder <- out_folder
-    file_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = T)
-    if(identical(file_input_path,character(0))){
-      file_input_path <- base::list.files(path = folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = T)
-      if(identical(file_input_path,character(0))){
-        print("I take ELSE")
-          file_input_path <- base::list.files(path = folder, pattern = glob2rx("*.tif$"), ignore.case = T, full.names = T)
-          file_input_path <- file_input_path[!(substr(basename(file_input_path),0,2) == "S2") & !(substr(basename(file_input_path),0,2) == "s2")]
-      }else{
-        print("I take FULL")
-      }
-    }else{
-      print("I take FULL_CLD")
-    }
-  }else{
-    folder <- name_of_current_output_folder
-    file_input_path <- base::list.files(path = folder, pattern = ".tif$", full.names = T, recursive = T)
-  }
-  
-  
-  
-  return(file_input_path)
-}
-
-
 #_____________________________________________________________________
 #prismaread ----
 #_____________________________________________________________________
@@ -429,9 +397,10 @@ predicted <- function(linear_model,
   return(numerator/denominator)
 }
 
-coregistration_to_s2 <- function(s2_file,
-                                 coreg_input_path,
-                                 coreg_out_folder,
+coregistration_to_s2 <- function(s2_path,
+                                 input_file_path,
+                                 name_of_current_output_folder,
+                                 output_file_path,
                                  dem,
                                  dem_path,
                                  product_type,
@@ -441,10 +410,10 @@ coregistration_to_s2 <- function(s2_file,
                                  shift_y = 0
                                  ){
   #create single layer image to coregister and change crs to EPSG:32632
-  coreg_proj_path <- gsub("*.tif$","_proj.tif",coreg_input_path)
+  coreg_proj_path <- gsub("*.tif$","_proj.tif",input_file_path)
   coreg_proj_path_52 <- base::gsub("proj","proj_52",coreg_proj_path)
   
-  target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_file),T,T,T)[3]$code)
+  target_epsg <- paste0("epsg:",terra::crs(terra::rast(s2_path),T,T,T)[3]$code)
   
   #project_dem if needed
   if(dem){
@@ -462,7 +431,7 @@ coregistration_to_s2 <- function(s2_file,
   }
   
   
-  prisma_projected <- terra::project(x = terra::rast(coreg_input_path),
+  prisma_projected <- terra::project(x = terra::rast(input_file_path),
                                      y = target_epsg,
                                      method = "near",
                                      threads = T)
@@ -512,7 +481,7 @@ coregistration_to_s2 <- function(s2_file,
   }
   
   # set arguments
-  single_band_reference_image <- s2_file
+  single_band_reference_image <- s2_path
   single_band_image_to_coregister <- coreg_proj_path_52
   multiband_image_to_coregister <- coreg_proj_path
   if(product_type == "L0"){
@@ -521,7 +490,7 @@ coregistration_to_s2 <- function(s2_file,
     arosics_local_path <- base::paste0("python"," ","/config_folder/arosics_local.py")
   }
   
-  output_directory <- coreg_out_folder
+  output_directory <- name_of_current_output_folder
 
   # setup AROSICS run command
   #IMPROVE: potrei usare AROSICS da riga di comando?
@@ -656,7 +625,7 @@ coregistration_to_s2 <- function(s2_file,
     #####
     #####get orthoprojection of PRISMA into S2 grid
     #####
-    s2_raster <- terra::rast(s2_file)
+    s2_raster <- terra::rast(s2_path)
     # library(tidytable)
     s2_df <- as.data.frame(s2_raster, xy =T)[,c(1,2)] |> tidytable::mutate(flag = row_number() %% 9) |>
       tidytable::filter(flag == 0) |> tidytable::select(-flag) |> as.data.frame() 
@@ -691,7 +660,7 @@ coregistration_to_s2 <- function(s2_file,
     invisible(gc())
     
     
-    saveRDS(s2_grid_filtered, paste0(coreg_out_folder,"/s2_grid_filtered.rds"))
+    saveRDS(s2_grid_filtered, paste0(name_of_current_output_folder,"/s2_grid_filtered.rds"))
     #as.numeric(prisma_projected[raster::cellFromRowCol(prisma_projected, c(800,700,600), c(800,700,600))])
     #s2_grid_filtered$value <- as.numeric(prisma_projected[raster::cellFromRowCol(prisma_projected, s2_grid_filtered$i, s2_grid_filtered$j)])
     #s2_prova <- s2_grid_filtered |> filter(i > 800 & i < 820 & j > 800 & j < 820)
@@ -702,18 +671,18 @@ coregistration_to_s2 <- function(s2_file,
     #s2_grid_filtered <- s2_grid_filtered |> filter(i > 600 & i < 900 & j > 600 & j < 900)
     ###############
     s2_grid_spectra <- prisma_projected[raster::cellFromRowCol(prisma_projected, s2_grid_filtered$i, s2_grid_filtered$j)]
-    saveRDS(s2_grid_spectra,paste0(coreg_out_folder,"/s2_grid_spectra.rds"))
+    saveRDS(s2_grid_spectra,paste0(name_of_current_output_folder,"/s2_grid_spectra.rds"))
     invisible(gc())
     s2_grid_sampled <- cbind(s2_grid_filtered$i,s2_grid_filtered$j,s2_grid_spectra) |>
       tidytable::rename(i = any_of(c("s2_grid_filtered$i")), j = any_of(c("s2_grid_filtered$j"))) |>
       tidytable::right_join(s2_grid_filtered) |>
       tidytable::select(-i,-j,-z)
-    saveRDS(s2_grid_sampled,paste0(coreg_out_folder,"/s2_grid_sampled.rds"))
+    saveRDS(s2_grid_sampled,paste0(name_of_current_output_folder,"/s2_grid_sampled.rds"))
     rm(s2_grid_spectra)
     rm(s2_grid_filtered)
     invisible(gc())
     #library(tidytable)
-    s2_grid_sampled <- readRDS(paste0(coreg_out_folder,"/s2_grid_sampled.rds"))
+    s2_grid_sampled <- readRDS(paste0(name_of_current_output_folder,"/s2_grid_sampled.rds"))
     s2_grid_sampled_dt <- s2_grid_sampled |> data.table::as.data.table() 
     rm(s2_grid_sampled)
     invisible(gc())
@@ -739,21 +708,21 @@ coregistration_to_s2 <- function(s2_file,
     rm(s2_grid_sampled_vect)
     rm(empty_raster)
     invisible(gc())
-    #terra::writeRaster(output_raster, paste0(coreg_out_folder,"/raster_not_focal.tif"), overwrite = T)
+    #terra::writeRaster(output_raster, paste0(name_of_current_output_folder,"/raster_not_focal.tif"), overwrite = T)
     
     #fill NA with bilinear value
     output_focal <- terra::focal(output_raster, w=3, fun=mean, na.policy="only", na.rm=T) #FIX: use focal only if it finds at least two values 
     output_focal_again <- terra::focal(output_focal, w=3, fun=mean, na.policy="only", na.rm=T)
     rm(output_focal)
     invisible(gc())
-    output_file <- base::paste0(output_directory,"/",gsub(".tif","_ortho.tif",basename(coreg_input_path)))
+    # output_file <- base::paste0(output_directory,"/",gsub(".tif","_ortho.tif",basename(input_file_path)))
     # 
     # out_file <- set_wvl_time(output_file_path = output_file,
     #                        output_file = output_focal_again,
     #                        wvl = all_wvl)
     # 
     terra::writeRaster(x = output_focal_again,
-                      filename = output_file,
+                      filename = output_file_path,
                       # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                       overwrite = T
                       )
@@ -767,9 +736,9 @@ coregistration_to_s2 <- function(s2_file,
     #s2_grid_list_of_cells <- lapply(1:s2_grid_number_of_cells, function(pixel){raster::xyFromCell(s2_raster,pixel)})
     
       #raster::xyFromCell(dem_projected, raster::cellFromRowCol(dem_projected, 800, 800))
-    #file.remove(paste0(coreg_out_folder,"/raster_not_focal.tif"))
+    #file.remove(paste0(name_of_current_output_folder,"/raster_not_focal.tif"))
   }else{
-    output_file <- base::paste0(output_directory,"/",gsub(".tif","_coreg.tif",basename(coreg_input_path)))
+    # output_file <- base::paste0(output_directory,"/",gsub(".tif","_coreg.tif",basename(input_file_path)))
     # create VRT with GCP
     GDAL_VRT_run_command <- base::paste("gdal_translate -q -of VRT", gcp_args, multiband_image_to_coregister, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=FALSE), sep=" ")
     writeLines(GDAL_VRT_run_command, base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))
@@ -784,7 +753,7 @@ coregistration_to_s2 <- function(s2_file,
     #GDAL_VRT_run_command <- base::paste("gdal_translate -q -of VRT", gcp_args, multiband_image_to_coregister, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=FALSE), sep=" ")
     #base::system(GDAL_VRT_run_command)
     # warp input image using second order polynomial
-    GDAL_WARP_run_command <- base::paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 30 30 -t_srs", target_epsg, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file, sep=" ")
+    GDAL_WARP_run_command <- base::paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 30 30 -t_srs", target_epsg, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file_path, sep=" ")
     
     result_gdalwarp <- httr2::request("http://arosics:8000/run") |>
       httr2::req_body_json(list(command = GDAL_WARP_run_command)) |>
@@ -808,16 +777,19 @@ coregistration_to_s2 <- function(s2_file,
 #_____________________________________________________________________
 #regrid ----
 #_____________________________________________________________________
-regrid_function <- function(master_image_path, name_of_current_output_folder, regrid_input_path, resample_type){
+regrid_function <- function(master_image_path, 
+                            name_of_current_output_folder, 
+                            input_file_path,
+                            output_file_path,
+                            resample_type){
+  
   master <- terra::rast(master_image_path)
-  slave <- terra::rast(regrid_input_path)
+  slave <- terra::rast(input_file_path)
   
   if(terra::crs(master, describe = T)$code != terra::crs(slave, describe = T)$code){
     reproject <- terra::project(slave, y = paste0("EPSG:",terra::crs(master, describe = T)$code))
     slave <- reproject
   }
-  
-  output_file <- base::paste0(name_of_current_output_folder,"/",gsub(".tif","_regrid.tif",basename(regrid_input_path)))
   
   terra::extend(x = master,
                 y = slave,
@@ -830,68 +802,55 @@ regrid_function <- function(master_image_path, name_of_current_output_folder, re
                   method = resample_type,
                   threads = T,
                   by_util = T,
-                  filename = output_file,
+                  filename = output_file_path,
                   # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                   overwrite = T)
   
   file.remove(base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif"))
   
-  # out_file <- set_wvl_time(output_file_path = output_file,
-  #                          output_file = regridded,
-  #                          wvl = all_wvl)
-  # 
-  # terra::writeRaster(x = out_file,
-  #                    filename = output_file,
-  #                    overwrite = T)
 }
 
 #_____________________________________________________________________
 #crop ----
 #_____________________________________________________________________
-crop_function <- function(master_image_path, name_of_current_output_folder, crop_input_path){
+crop_function <- function(master_image_path, 
+                          name_of_current_output_folder, 
+                          input_file_path, 
+                          output_file_path){
+  
   master <- terra::rast(master_image_path)
-  slave <- terra::rast(crop_input_path)
+  slave <- terra::rast(input_file_path)
   
   if(terra::crs(master, describe = T)$code != terra::crs(slave, describe = T)$code){
     reproject <- terra::project(slave, y = paste0("EPSG:",terra::crs(master, describe = T)$code))
     slave <- reproject
   }
   
-  output_file <- base::paste0(name_of_current_output_folder,"/",gsub(".tif","_crop.tif",basename(crop_input_path)))
-  
-  
   terra::crop(x = slave,
               y = master,
-              filename = output_file,
+              filename = output_file_path,
               # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
               overwrite = T)
-  
-  # out_file <- set_wvl_time(output_file_path = output_file,
-  #                          output_file = cropped,
-  #                          wvl = all_wvl)
-  # 
-  # terra::writeRaster(x = out_file,
-  #                    filename = output_file,
-  #                    overwrite = T)
-  
 }
 
 #_____________________________________________________________________
 #smooth ----
 #_____________________________________________________________________
-smooth_spectra <- function(smooth_file_path,
+smooth_spectra <- function(input_file_path,
                            PRISMA_config,
                            PRISMA_bad_bands_table,
+                           PRISMA_wvl_info,
                            name_of_current_output_folder,
-                           cloud_smooth,
+                           output_file_path,
+                           cloud_present_in_stack,
                            full_230_bands,
                            n_threads = 1
                            ){
-  output_file <- base::paste0(name_of_current_output_folder,"/",gsub(".tif","_smooth.tif",basename(smooth_file_path)))
   
   input_bad_bands <- PRISMA_bad_bands_table$band
   
-  input_wvl <- PRISMA_config$center
+  #prev version: input_wvl <- PRISMA_config$center
+  input_wvl <- PRISMA_wvl_info$wl
   
   selection_vector <- 1
   
@@ -910,9 +869,9 @@ smooth_spectra <- function(smooth_file_path,
   
   #print("Read terra image")
   
-  terra_image <- terra::rast(smooth_file_path)
+  terra_image <- terra::rast(input_file_path)
   
-  if(cloud_smooth){
+  if(cloud_present_in_stack){
     cloud <- terra::subset(terra_image,subset = 231, negate = F)
     terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
   }else{
@@ -943,18 +902,16 @@ smooth_spectra <- function(smooth_file_path,
     cores = n_threads
   )
   
-  if(cloud_smooth){
+  if(cloud_present_in_stack){
     out_file <- c(smoothed_file,cloud)
   }else{
     out_file <- smoothed_file
   }
   
   terra::writeRaster(x = out_file,
-                     filename = output_file,
+                     filename = output_file_path,
                      # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
-                     overwrite = T
-    )
-  # return(NULL)
+                     overwrite = T)
 }
 
 spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_output, df = 40) {
@@ -977,11 +934,21 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
 #add_PRISMA_metadata ----
 #_____________________________________________________________________
 add_PRISMA_metadata <- function(name_of_current_output_folder,
-                                metadata_file_path,
-                                all_wvl,
-                                cloud
+                                input_file_path,
+                                PRISMA_angle_info, #here I get the time
+                                PRISMA_wvl_info, #here I get the wavelength of the not smoothed
+                                cloud_present_in_stack,
+                                output_file_path,
+                                full_230_bands
                                 ){
-  output_file <- terra::rast(metadata_file_path)
+  
+  #idea 1: do we have the cloud mask?
+  
+  #idea 2: did we perform the smoothing or not? 
+  #idea 2.1: if YES, did we use all 230 bands?
+   
+  
+  output_file <- terra::rast(input_file_path)
   
   if(cloud){
     base::names(output_file) <- c(all_wvl,"cloud_mask")
@@ -989,17 +956,15 @@ add_PRISMA_metadata <- function(name_of_current_output_folder,
     base::names(output_file) <- all_wvl
   }
   
-  if(grepl(pattern= "OFFL", x = basename(metadata_file_path))){
-    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(metadata_file_path), "OFFL_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
+  if(grepl(pattern= "OFFL", x = basename(input_file_path))){
+    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(input_file_path), "OFFL_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
                                  terra::nlyr(output_file))
-  }else if(grepl(pattern= "STD", x = basename(metadata_file_path))){
-    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(metadata_file_path), "STD_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
+  }else if(grepl(pattern= "STD", x = basename(input_file_path))){
+    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(input_file_path), "STD_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
                                  terra::nlyr(output_file))
   }else{
     stop("ERROR. The he5 file has no standard name (it does not contain neither STD nor OFFL).")
   }
-  
-  output_file_path <- base::paste0(name_of_current_output_folder,"/",gsub(".tif","_addmetadata.tif",basename(metadata_file_path)))
   
   terra::writeRaster(x = output_file,
                      filename = output_file_path,
@@ -1039,7 +1004,7 @@ naming_convention <- function(out_folder,
     #trimming of the raster around the master image
     letter_to_add <- "T"
   }
-  if(current_operation == "add_metadata"){
+  if(current_operation == "addmetadata"){
     #add metadata to the printed file
     letter_to_add <- "M"
   }
@@ -1059,14 +1024,6 @@ naming_convention <- function(out_folder,
     new_basename <- gsub("*.tif$", paste0(letter_to_add,".tif"),old_basename)
     output_file_path <- paste0(name_of_current_output_folder,"/",new_basename)
   }else{
-    input_file_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = T)
-    if(!identical(input_file_path,character(0))){
-      print("I take FULL_CLD.tif")
-    }
-    input_file_path <- base::list.files(path = out_folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = T)
-    if(!identical(input_file_path,character(0))){
-      print("I take FULL.tif")
-    }
     date <- as.Date(PRISMA_angle_info$date)
     time <- hms::as_hms(PRISMA_angle_info$date)
     time_string <- paste0(as.POSIXlt(time)$hour,as.POSIXlt(time)$min,base::round(as.POSIXlt(time)$sec,0))
@@ -1084,6 +1041,21 @@ naming_convention <- function(out_folder,
   }
   
   return(output_file_path)
+}
+
+get_starting_prisma_image <- function(unchained_out_folder,
+                                      cloud_present_in_stack){
+  if(cloud_present_in_stack){
+    input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = F)
+  }else{
+    input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = F)
+  }
+  
+  if(!identical(input_file_path,character(0))){
+    stop("No readable PRISMA image found at", unchained_out_folder)
+  }
+  
+  return(input_file_path)
 }
 
 #_____________________________________________________________________
