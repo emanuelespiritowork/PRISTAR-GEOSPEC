@@ -116,7 +116,10 @@ PRISTAR_processing <- function(root_folder){
       if(identical(he5_path,character(0))){
         stop(paste0("No he5 file found in ", root_folder))
       }else{
-        prismaread_function(product_type, he5_path, unchained_out_folder, root_folder, dem_root_path)
+        prismaread_function(product_type = product_type, 
+                            he5_path = he5_path, 
+                            unchained_out_folder = unchained_out_folder, 
+                            root_folder = root_folder)
       }
     }
     
@@ -137,7 +140,8 @@ PRISTAR_processing <- function(root_folder){
       if(identical(cloud_path,character(0)) | identical(full_path,character(0))){
         stop(paste0("Lacking either _FULL.tif or _CLD.tif in the folder ",unchained_out_folder))
       }else{
-        cloud_mask(cloud_path, full_path)
+        cloud_mask(cloud_path = cloud_path, 
+                   full_path = full_path)
       }
       
       cloud_present_in_stack <- T
@@ -198,7 +202,6 @@ PRISTAR_processing <- function(root_folder){
         
         coregistration_to_s2(s2_path = s2_path,
                              input_file_path = input_file_path,
-                             name_of_current_output_folder = name_of_current_output_folder,
                              output_file_path = output_file_path,
                              dem = dem,
                              dem_path = dem_path,
@@ -235,7 +238,6 @@ PRISTAR_processing <- function(root_folder){
         }
         
         regrid_function(master_image_path = master_image_path,
-                        name_of_current_output_folder = name_of_current_output_folder, 
                         input_file_path = input_file_path, 
                         output_file_path = output_file_path, 
                         resample_type = resample_type)
@@ -245,7 +247,6 @@ PRISTAR_processing <- function(root_folder){
       if(current_operation == "crop"){
         print("CROP")
         crop_function(master_image_path = master_image_path,
-                      name_of_current_output_folder = name_of_current_output_folder, 
                       input_file_path = input_file_path, 
                       output_file_path = output_file_path)
       }
@@ -257,7 +258,6 @@ PRISTAR_processing <- function(root_folder){
                        PRISMA_config = PRISMA_config,
                        PRISMA_wvl_info = PRISMA_wvl_info,
                        PRISMA_bad_bands_table = PRISMA_bad_bands_table,
-                       name_of_current_output_folder = name_of_current_output_folder,
                        cloud_present_in_stack = cloud_present_in_stack,
                        full_230_bands = full_230_bands,
                        n_threads = n_threads,
@@ -267,8 +267,7 @@ PRISTAR_processing <- function(root_folder){
       ##1.3.2.5 "addmetadata" operation ----
       if(current_operation == "addmetadata"){
         print("ADD PRISMA METADATA")
-        add_PRISMA_metadata(name_of_current_output_folder = name_of_current_output_folder,
-                            input_file_path = input_file_path,
+        add_PRISMA_metadata(input_file_path = input_file_path,
                             PRISMA_wvl_info = PRISMA_wvl_info ,
                             PRISMA_angle_info = PRISMA_angle_info,
                             PRISMA_config = PRISMA_config,
@@ -291,7 +290,7 @@ PRISTAR_processing <- function(root_folder){
           stop("The L2 product is already in reflectance, so do not need any atcor.")
         }
         
-        isofit_atcor(name_of_current_output_folder = name_of_current_output_folder,
+        isofit_atcor(output_file_path = output_file_path,
                input_file_path = input_file_path,
                PRISMA_wvl_info = PRISMA_wvl_info, 
                root_folder = root_folder,

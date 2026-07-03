@@ -56,7 +56,7 @@ def read_PRISMA_vaa(file):
         m = v_sc[0]*North[0] + v_sc[1]*North[1] + v_sc[2]*North[2];
         azimuth = np.arctan2(I,m)*180/np.pi; 
         
-        return zenith, azimuth
+        return zenith, azimuth, r_sc
 
     with h5py.File(file, mode='r') as f:
         

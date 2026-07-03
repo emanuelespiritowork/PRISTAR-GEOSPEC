@@ -74,10 +74,9 @@ check_folder_chain <- function(name_of_current_output_folder,
 #prismaread ----
 #_____________________________________________________________________
 prismaread_function <- function(product_type, 
-                                he5_file, 
-                                out_folder,
-                                root_folder,
-                                dem_root_path
+                                he5_path, 
+                                unchained_out_folder,
+                                root_folder
                                 ){
   
   if(product_type == "L1"){
@@ -101,8 +100,8 @@ prismaread_function <- function(product_type,
   
   prismaread::pr_convert(
     ANGLES = ANGLES,
-    in_file = he5_file,
-    out_folder = out_folder,
+    in_file = he5_path,
+    unchained_out_folder = unchained_out_folder,
     out_format = "GTiff",
     base_georef = T,
     VNIR = F,
@@ -119,11 +118,9 @@ prismaread_function <- function(product_type,
   )
   
   if(product_type == "L1"){
-    angle_file_path <- base::list.files(path = out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
+    angle_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
     atcor_parameters(angle_file_path, root_folder)
   }
-  
-  
   
 }
 
@@ -134,16 +131,25 @@ atcor_parameters <- function(angle_file_path,
       file = '/config_folder/angle_config.txt')
   prismaread_angle_file <- utils::read.table(angle_file_path, header =T)
   PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
-  sensor_angles <- base::system(PRISMA_angle_command, intern = TRUE)[[2]]
   
-  sensor_zenith <- strsplit(sensor_angles,",")[[1]][1]
-  sensor_zenith <- gsub('^.', '', sensor_zenith)
+  result_sensor_angles <- httr2::request("http://arosics:8000/run") |>
+    httr2::req_body_json(list(command = PRISMA_angle_command)) |>
+    httr2::req_perform()
   
-  sensor_azimuth <- strsplit(sensor_angles,",")[[1]][2]
-  sensor_azimuth <- gsub('^.|.$', '', sensor_azimuth)
+  res <- result_sensor_angles |>
+    httr2::resp_body_json()
+  
+  var <- res$stdout
+  
+  sensor_zenith <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[1]], "float64")[[1]][[2]]))
+  
+  sensor_azimuth <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[2]], "float64")[[1]][[2]]))
+  
+  slant_path <- gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[3]], "float64")[[1]][[2]])))
   
   prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
   prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
+  prismaread_angle_file$slant_path <- as.numeric(slant_path)
   
   if(prismaread_angle_file$sensor_azimuth < 0){
     prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
@@ -159,13 +165,13 @@ atcor_parameters <- function(angle_file_path,
   
   print("Please read the ATCOR_readme.txt file for info on angles.")
   
-  atcor_readme <- "Azimuth angles range = [0,360]Deg. Zenith angles range = [0,90]Deg"
+  atcor_readme <- "Azimuth angles range = [0,360]Deg. Zenith angles range = [0,90]Deg. Slant path is the distance between satellite and target center in meters"
   
   write(atcor_readme,paste0(base::dirname(angle_file_path),"/ATCOR/atcor_readme.txt"))
 }
 
 #isofit atmospheric correction ----
-isofit_atcor <- function(name_of_current_output_folder, 
+isofit_atcor <- function(output_file_path,
                          input_file_path, 
                          PRISMA_wvl_info, 
                          root_folder,
@@ -178,7 +184,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   #read the file in GTiff format
   raster_read <- terra::rast(input_file_path)
   #convert in ENVI format
-  rdn_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_rdn.envi",basename(input_file_path)))
+  rdn_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn.envi",basename(input_file_path)))
   terra::writeRaster(raster_read,
                      rdn_file_path,
                      overwrite = T)
@@ -187,7 +193,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   band_wl <- PRISMA_wvl_info$wl
   band_fwhm <- PRISMA_wvl_info$fwhm
   
-  rdn_hdr_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_rdn.hdr",basename(input_file_path)))
+  rdn_hdr_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn.hdr",basename(input_file_path)))
   
   cat(paste0("band names = {",paste0("B",band_names, collapse = ", "), "}"),
       file = rdn_hdr_file_path,
@@ -206,7 +212,7 @@ isofit_atcor <- function(name_of_current_output_folder,
       append = T)
   
   #remove the xml file
-  file.remove(list.files(name_of_current_output_folder,
+  file.remove(list.files(base::dirname(output_file_path),
                          pattern = "*.xml$",
                          full.names = T))
   
@@ -244,12 +250,12 @@ isofit_atcor <- function(name_of_current_output_folder,
                   latitude_mask,
                   dtm_mask)
   
-  loc_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_loc.envi",basename(input_file_path)))
+  loc_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_loc.envi",basename(input_file_path)))
   terra::writeRaster(loc_raster,
                      loc_file_path,
                      overwrite = T)
   
-  file.remove(list.files(name_of_current_output_folder,
+  file.remove(list.files(base::dirname(output_file_path),
                          pattern = "*.xml$",
                          full.names = T))
   
@@ -322,6 +328,15 @@ isofit_atcor <- function(name_of_current_output_folder,
   cos_local_solar_ill_angle_mask <- cos(sunzen_mask) * cos(slope_mask) + sin(sunzen_mask) * sin(slope_mask) * cos(sunaz_mask - aspect_mask)
   names(cos_local_solar_ill_angle_mask) <- "cos(i)"
   
+  #approximate based on ESA computation. To search the same method used by ASI to compute earth sun distance
+  earth_sun_distance <- satellite::calcEarthSunDist(date = PRISMA_angle_info$date, formula = "ESA")
+  earth_sun_distance_raster <- terra::rast(raster_read[[1]],
+                                           vals = earth_sun_distance,
+                                           names = "earth_sun_distance")
+  earth_sun_distance_resample <- terra::resample(earth_sun_distance_raster, raster_read)
+  earth_sun_distance_crop <- terra::crop(earth_sun_distance_resample, raster_read)
+  earth_sun_distance_mask <- terra::mask(earth_sun_distance_crop, raster_read[[1]])
+  
   h5_read <- h5ls(he5_path)
   mydata <- h5read(he5_path, "/mygroup/mydata")
   
@@ -329,7 +344,7 @@ isofit_atcor <- function(name_of_current_output_folder,
   
   aux_sun_earth_distance <- terra::metags(read_he5_terra)
   
-  obs_raster <- c(path, #lack
+  obs_raster <- c(path_mask, #lack
                   senaz_mask,
                   senzen_mask,
                   sunaz_mask,
@@ -339,9 +354,9 @@ isofit_atcor <- function(name_of_current_output_folder,
                   aspect_mask,
                   cos_local_solar_ill_angle_mask,
                   utc_mask,
-                  earth_sun_distance_mask) #lack
+                  earth_sun_distance_mask) 
   
-  obs_file_path <- paste0(name_of_current_output_folder,"/",gsub("*.tif$","_obs.envi",basename(input_file_path)))
+  obs_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_obs.envi",basename(input_file_path)))
   terra::writeRaster(obs_raster,
                      obs_file_path,
                      overwrite = T)
@@ -399,7 +414,6 @@ predicted <- function(linear_model,
 
 coregistration_to_s2 <- function(s2_path,
                                  input_file_path,
-                                 name_of_current_output_folder,
                                  output_file_path,
                                  dem,
                                  dem_path,
@@ -490,7 +504,7 @@ coregistration_to_s2 <- function(s2_path,
     arosics_local_path <- base::paste0("python"," ","/config_folder/arosics_local.py")
   }
   
-  output_directory <- name_of_current_output_folder
+  output_directory <- base::dirname(output_file_path)
 
   # setup AROSICS run command
   #IMPROVE: potrei usare AROSICS da riga di comando?
@@ -660,7 +674,7 @@ coregistration_to_s2 <- function(s2_path,
     invisible(gc())
     
     
-    saveRDS(s2_grid_filtered, paste0(name_of_current_output_folder,"/s2_grid_filtered.rds"))
+    saveRDS(s2_grid_filtered, paste0(base::dirname(output_file_path),"/s2_grid_filtered.rds"))
     #as.numeric(prisma_projected[raster::cellFromRowCol(prisma_projected, c(800,700,600), c(800,700,600))])
     #s2_grid_filtered$value <- as.numeric(prisma_projected[raster::cellFromRowCol(prisma_projected, s2_grid_filtered$i, s2_grid_filtered$j)])
     #s2_prova <- s2_grid_filtered |> filter(i > 800 & i < 820 & j > 800 & j < 820)
@@ -671,18 +685,18 @@ coregistration_to_s2 <- function(s2_path,
     #s2_grid_filtered <- s2_grid_filtered |> filter(i > 600 & i < 900 & j > 600 & j < 900)
     ###############
     s2_grid_spectra <- prisma_projected[raster::cellFromRowCol(prisma_projected, s2_grid_filtered$i, s2_grid_filtered$j)]
-    saveRDS(s2_grid_spectra,paste0(name_of_current_output_folder,"/s2_grid_spectra.rds"))
+    saveRDS(s2_grid_spectra,paste0(base::dirname(output_file_path),"/s2_grid_spectra.rds"))
     invisible(gc())
     s2_grid_sampled <- cbind(s2_grid_filtered$i,s2_grid_filtered$j,s2_grid_spectra) |>
       tidytable::rename(i = any_of(c("s2_grid_filtered$i")), j = any_of(c("s2_grid_filtered$j"))) |>
       tidytable::right_join(s2_grid_filtered) |>
       tidytable::select(-i,-j,-z)
-    saveRDS(s2_grid_sampled,paste0(name_of_current_output_folder,"/s2_grid_sampled.rds"))
+    saveRDS(s2_grid_sampled,paste0(base::dirname(output_file_path),"/s2_grid_sampled.rds"))
     rm(s2_grid_spectra)
     rm(s2_grid_filtered)
     invisible(gc())
     #library(tidytable)
-    s2_grid_sampled <- readRDS(paste0(name_of_current_output_folder,"/s2_grid_sampled.rds"))
+    s2_grid_sampled <- readRDS(paste0(base::dirname(output_file_path),"/s2_grid_sampled.rds"))
     s2_grid_sampled_dt <- s2_grid_sampled |> data.table::as.data.table() 
     rm(s2_grid_sampled)
     invisible(gc())
@@ -708,7 +722,7 @@ coregistration_to_s2 <- function(s2_path,
     rm(s2_grid_sampled_vect)
     rm(empty_raster)
     invisible(gc())
-    #terra::writeRaster(output_raster, paste0(name_of_current_output_folder,"/raster_not_focal.tif"), overwrite = T)
+    #terra::writeRaster(output_raster, paste0(base::dirname(output_file_path),"/raster_not_focal.tif"), overwrite = T)
     
     #fill NA with bilinear value
     output_focal <- terra::focal(output_raster, w=3, fun=mean, na.policy="only", na.rm=T) #FIX: use focal only if it finds at least two values 
@@ -736,7 +750,7 @@ coregistration_to_s2 <- function(s2_path,
     #s2_grid_list_of_cells <- lapply(1:s2_grid_number_of_cells, function(pixel){raster::xyFromCell(s2_raster,pixel)})
     
       #raster::xyFromCell(dem_projected, raster::cellFromRowCol(dem_projected, 800, 800))
-    #file.remove(paste0(name_of_current_output_folder,"/raster_not_focal.tif"))
+    #file.remove(paste0(base::dirname(output_file_path),"/raster_not_focal.tif"))
   }else{
     # output_file <- base::paste0(output_directory,"/",gsub(".tif","_coreg.tif",basename(input_file_path)))
     # create VRT with GCP
@@ -778,7 +792,6 @@ coregistration_to_s2 <- function(s2_path,
 #regrid ----
 #_____________________________________________________________________
 regrid_function <- function(master_image_path, 
-                            name_of_current_output_folder, 
                             input_file_path,
                             output_file_path,
                             resample_type){
@@ -794,11 +807,11 @@ regrid_function <- function(master_image_path,
   terra::extend(x = master,
                 y = slave,
                 fill = 0,
-                filename = base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif"),
+                filename = base::paste0(base::dirname(output_file_path),"/PRISMA_extend.tif"),
                 overwrite = T)
   
   terra::resample(x = slave,
-                  y = terra::rast(base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif")),
+                  y = terra::rast(base::paste0(base::dirname(output_file_path),"/PRISMA_extend.tif")),
                   method = resample_type,
                   threads = T,
                   by_util = T,
@@ -806,7 +819,7 @@ regrid_function <- function(master_image_path,
                   # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                   overwrite = T)
   
-  file.remove(base::paste0(name_of_current_output_folder,"/PRISMA_extend.tif"))
+  file.remove(base::paste0(base::dirname(output_file_path),"/PRISMA_extend.tif"))
   
 }
 
@@ -814,7 +827,6 @@ regrid_function <- function(master_image_path,
 #crop ----
 #_____________________________________________________________________
 crop_function <- function(master_image_path, 
-                          name_of_current_output_folder, 
                           input_file_path, 
                           output_file_path){
   
@@ -840,7 +852,6 @@ smooth_spectra <- function(input_file_path,
                            PRISMA_config,
                            PRISMA_bad_bands_table,
                            PRISMA_wvl_info,
-                           name_of_current_output_folder,
                            output_file_path,
                            cloud_present_in_stack,
                            full_230_bands,
@@ -933,8 +944,9 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
 #_____________________________________________________________________
 #add_PRISMA_metadata ----
 #_____________________________________________________________________
-add_PRISMA_metadata <- function(name_of_current_output_folder,
-                                input_file_path,
+add_PRISMA_metadata <- function(input_file_path,
+                                PRISMA_config, #here I get the wavelength of the smoothed
+                                PRISMA_bad_bands_table, #here I get the bad bands
                                 PRISMA_angle_info, #here I get the time
                                 PRISMA_wvl_info, #here I get the wavelength of the not smoothed
                                 cloud_present_in_stack,
@@ -942,34 +954,76 @@ add_PRISMA_metadata <- function(name_of_current_output_folder,
                                 full_230_bands
                                 ){
   
-  #idea 1: do we have the cloud mask?
+  processing <- tools::file_path_sans_ext(strsplit(basename(input_file_path),"_")[[1]][[length(strsplit(basename(input_file_path),"_")[[1]])]])
   
-  #idea 2: did we perform the smoothing or not? 
-  #idea 2.1: if YES, did we use all 230 bands?
-   
-  
-  output_file <- terra::rast(input_file_path)
-  
-  if(cloud){
-    base::names(output_file) <- c(all_wvl,"cloud_mask")
+  if(grepl(pattern = "S", x = processing)){
+    
+    selection_vector <- 1
+    
+    if(full_230_bands){
+      selection_vector <- c(0,1)
+    }
+    
+    smoothed_config <- PRISMA_config |>
+      tidytable::filter(BND_SEL %in% selection_vector) 
+    
+      band_wavelengths <- smoothed_config$center
+      band_names <- smoothed_config$Name
+      band_fwhms <- smoothed_config$fwhm
   }else{
-    base::names(output_file) <- all_wvl
+    band_names <- paste0("B",PRISMA_wvl_info$band)
+    band_wavelengths <- PRISMA_wvl_info$wl
+    band_fwhms <- PRISMA_wvl_info$fwhm
   }
   
-  if(grepl(pattern= "OFFL", x = basename(input_file_path))){
-    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(input_file_path), "OFFL_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
-                                 terra::nlyr(output_file))
-  }else if(grepl(pattern= "STD", x = basename(input_file_path))){
-    terra::time(output_file) <- rep(as.Date(substring(stringr::str_match(basename(input_file_path), "STD_\\s*(.*?)\\s*_HCO")[2],1,8),format = "%Y%m%d"),
-                                 terra::nlyr(output_file))
+  if(grepl(pattern = "F", x = processing)){
+    layer_names <- c(band_names, "cloud_mask")
+    layer_wavelengths <- c(band_wavelengths, "cloud_mask")
+    layer_fwhms <- c(band_fwhms, "cloud_mask")
   }else{
-    stop("ERROR. The he5 file has no standard name (it does not contain neither STD nor OFFL).")
+    layer_names <- band_names
+    layer_wavelengths <- band_wavelengths
+    layer_fwhms <- band_fwhms
   }
   
-  terra::writeRaster(x = output_file,
-                     filename = output_file_path,
+  #read raster
+  input_file <- terra::rast(input_file_path)
+  
+  #write time
+  datetime <- as.POSIXlt(PRISMA_angle_info$date)
+  terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
+  
+  #print raster
+  output_file_path_envi <- gsub("\\.tif$",".envi",output_file_path)
+  terra::writeRaster(x = input_file,
+                     filename = output_file_path_envi,
                      # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                      overwrite = T)
+  
+  #write band names, wavelengths and fwhms
+  hdr_file_path <- gsub("\\.envi$",".hdr",output_file_path_envi)
+  
+  cat(paste0("band names = {",paste0(layer_names, collapse = ", "), "}"),
+      file = hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("wavelength = {",paste0(layer_wavelengths, collapse = ", "), "}"),
+      file = hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("wavelength units = Nanometers"),
+      file = hdr_file_path,
+      append = T)
+  
+  cat("\n", paste0("fwhm = {",paste0(layer_fwhms, collapse = ", "), "}"),
+      file = hdr_file_path,
+      append = T)
+  
+  #remove the xml file
+  file.remove(list.files(dirname(output_file_path),
+                         pattern = "*.xml$",
+                         full.names = T))
+  
   
 }
 
@@ -1030,8 +1084,8 @@ naming_convention <- function(out_folder,
     date_string <- gsub("-","",date)
     datetime <- paste0(date_string,"T",time_string) 
     
-    #in case the unchained "cloud" has been performed add also "F", i.e. fixing cloud mask
     if(grepl(pattern = "FULL_CLD.tif",x = input_file_path)){
+      #in case the unchained "cloud" has been performed add also "F", i.e. fixing cloud mask
       new_basename <- paste(c("PRS",product_type,datetime,paste0("F",letter_to_add)), collapse = "_")
     }else{
       new_basename <- paste(c("PRS",product_type,datetime,letter_to_add), collapse = "_")
@@ -1051,7 +1105,7 @@ get_starting_prisma_image <- function(unchained_out_folder,
     input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = F)
   }
   
-  if(!identical(input_file_path,character(0))){
+  if(identical(input_file_path,character(0))){
     stop("No readable PRISMA image found at", unchained_out_folder)
   }
   
