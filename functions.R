@@ -848,9 +848,22 @@ crop_function <- function(master_image_path,
 #_____________________________________________________________________
 #smooth ----
 #_____________________________________________________________________
+
+bad_bands_vector <- c(
+    837, 872,
+    922, 962,
+    1098, 1122,
+    1150, 1155,
+    1184, 1209,
+    1249, 1286,
+    1338, 1471,
+    1792, 1960
+)
+
+
 smooth_spectra <- function(input_file_path,
                            PRISMA_config,
-                           PRISMA_bad_bands_table,
+                           PRISMA_bad_bands_table = bad_bands_vector,
                            PRISMA_wvl_info,
                            output_file_path,
                            cloud_present_in_stack,
@@ -858,10 +871,13 @@ smooth_spectra <- function(input_file_path,
                            n_threads = 1
                            ){
   
-  input_bad_bands <- PRISMA_bad_bands_table$band
+  
   
   #prev version: input_wvl <- PRISMA_config$center
   input_wvl <- PRISMA_wvl_info$wl
+  
+  #findInterval() produce a vector containing the interval number in which the value falls.The numbers produced by findInterval start with 0 if the value is smaller than the minimum of the first interval, hence if the interval number is uneven, the bands falls in a bad bands range. The X %% 2) != 0 finds all uneven values.
+  input_bad_bands <- which((findInterval(input_wvl, PRISMA_bad_bands_table) %% 2) != 0) 
   
   selection_vector <- 1
   
