@@ -15,7 +15,7 @@ services:
     networks: [PRISTAR_net]
 
   isofit:
-    image: lorenzopari/isofit-api:latest
+    image: lorenzopari/isofit-api:4.0.0
     container_name: PRISTAR_isofit
     volumes:
       - ${IMAGES_PATH}:/space
