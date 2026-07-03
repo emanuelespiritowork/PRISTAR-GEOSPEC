@@ -1,6 +1,6 @@
 services:
   rstudio:
-    image: emanuelespiritowork/pristar-geospec:0.3
+    image: lorenzopari/test_pristar:0.4
     container_name: pristar-geospec
     ports: ["${PORT_rstudio}:8787"]
     environment:
