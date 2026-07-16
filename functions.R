@@ -101,7 +101,7 @@ prismaread_function <- function(product_type,
   prismaread::pr_convert(
     ANGLES = ANGLES,
     in_file = he5_path,
-    unchained_out_folder = unchained_out_folder,
+    out_folder = unchained_out_folder,
     out_format = "GTiff",
     base_georef = T,
     VNIR = F,
@@ -170,7 +170,9 @@ atcor_parameters <- function(angle_file_path,
   write(atcor_readme,paste0(base::dirname(angle_file_path),"/ATCOR/atcor_readme.txt"))
 }
 
+#_____________________________________________________________________
 #isofit atmospheric correction ----
+#_____________________________________________________________________
 isofit_atcor <- function(output_file_path,
                          input_file_path, 
                          PRISMA_wvl_info, 
@@ -181,19 +183,25 @@ isofit_atcor <- function(output_file_path,
   ####### Creation of RDN file
   #####################
   
-  #read the file in GTiff format
-  raster_read <- terra::rast(input_file_path)
+  #read the file in GTiff format #REMOVE CLOUD MASK
+  raster_read <- terra::rast(input_file_path, lyrs = c(1:230))
+  
   #convert in ENVI format
-  rdn_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn.envi",basename(input_file_path)))
+  rdn_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn",basename(input_file_path))))
   terra::writeRaster(raster_read,
                      rdn_file_path,
-                     overwrite = T)
+                     overwrite = T,
+                     # gdal = "ENVI",
+                     filetype = "ENVI",
+                     NAflag = -9999)
   #fill the hdr with metadata
   band_names <- PRISMA_wvl_info$band
   band_wl <- PRISMA_wvl_info$wl
   band_fwhm <- PRISMA_wvl_info$fwhm
   
-  rdn_hdr_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn.hdr",basename(input_file_path)))
+  
+  
+  rdn_hdr_file_path <- paste0(rdn_file_path,".hdr")
   
   cat(paste0("band names = {",paste0("B",band_names, collapse = ", "), "}"),
       file = rdn_hdr_file_path,
@@ -250,10 +258,12 @@ isofit_atcor <- function(output_file_path,
                   latitude_mask,
                   dtm_mask)
   
-  loc_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_loc.envi",basename(input_file_path)))
+  loc_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_loc",basename(input_file_path))))
   terra::writeRaster(loc_raster,
                      loc_file_path,
-                     overwrite = T)
+                     overwrite = T,
+                     filetype = "ENVI",
+                     NAflag = -9999)
   
   file.remove(list.files(base::dirname(output_file_path),
                          pattern = "*.xml$",
@@ -262,6 +272,16 @@ isofit_atcor <- function(output_file_path,
   #####################
   ####### Creation of OBS file
   #####################
+  
+  #NAN presenti in slant 
+  slant_path <- terra::rast(raster_read[[1]], 
+                        vals = PRISMA_angle_info$slant_path,
+                        names = "slant_path")
+  
+  slant_path_resample <- terra::resample(slant_path, raster_read)
+  slant_path_crop <- terra::crop(slant_path_resample, raster_read)
+  slant_path_mask <- terra::mask(slant_path_crop, raster_read[[1]])
+  
   sunzen <- terra::rast(raster_read[[1]], 
                               vals = PRISMA_angle_info$sunzen,
                               names = "sunzen")
@@ -337,14 +357,7 @@ isofit_atcor <- function(output_file_path,
   earth_sun_distance_crop <- terra::crop(earth_sun_distance_resample, raster_read)
   earth_sun_distance_mask <- terra::mask(earth_sun_distance_crop, raster_read[[1]])
   
-  h5_read <- h5ls(he5_path)
-  mydata <- h5read(he5_path, "/mygroup/mydata")
-  
-  read_he5_terra <- terra::rast(he5_path)
-  
-  aux_sun_earth_distance <- terra::metags(read_he5_terra)
-  
-  obs_raster <- c(path_mask, #lack
+  obs_raster <- c(slant_path_mask, 
                   senaz_mask,
                   senzen_mask,
                   sunaz_mask,
@@ -356,10 +369,51 @@ isofit_atcor <- function(output_file_path,
                   utc_mask,
                   earth_sun_distance_mask) 
   
-  obs_file_path <- paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_obs.envi",basename(input_file_path)))
+  obs_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_obs",basename(input_file_path))))
   terra::writeRaster(obs_raster,
                      obs_file_path,
-                     overwrite = T)
+                     overwrite = T,
+                     filetype = "ENVI",
+                     NAflag = -9999)
+  
+  file.remove(list.files(base::dirname(output_file_path),
+                         pattern = "*.xml$",
+                         full.names = T))
+  #####################
+  ####### Renaming files for isofit
+  #####################
+  #remove .envi extension
+  
+  #change name from PRS_L1_YYYYMMDDTHHMMSS to PRSYYYYMMDDTHHMMSS
+  
+  
+  #####################
+  ####### Running isofit
+  #####################
+  isofit_command <- sprintf(
+    "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores 10 --presolve",
+    rdn_file_path, 
+    loc_file_path, 
+    obs_file_path, 
+    paste0(base::dirname(output_file_path),"/results"),
+    "/config_folder/surface_20240103_enmap_OG.json")
+  
+  result_isofit_command <- httr2::request("http://isofit:8000/run") |>
+    httr2::req_body_json(list(command = isofit_command)) |>
+    httr2::req_perform()
+  
+  res <- result_isofit_command |>
+    httr2::resp_body_json()
+  
+  var <- res$stderr
+  
+  #ADD CLOUD MASK
+  
+}
+
+run_ISOFIT <- function(rdn, loc, obs, out_dir) {
+  cmd <- 
+  system(cmd)  # blocks until done
 }
 
 #_____________________________________________________________________
@@ -370,7 +424,7 @@ cloud_mask <- function(cloud_path,
                        ){
   cloud <- terra::rast(cloud_path)
   cloud <- terra::subst(cloud, NA, 1)
-  terra::plot(cloud, range = c(0,1))
+  # terra::plot(cloud, range = c(0,1))
   
   cloud_dil <- spatialist::erodil_raster(raster = cloud, 
                                          width = c(3,3), 
@@ -856,22 +910,19 @@ smooth_spectra <- function(input_file_path,
                            cloud_present_in_stack,
                            full_230_bands,
                            n_threads = 1
-                           ){
-  
-  
-  
+){
   #prev version: input_wvl <- PRISMA_config$center
   input_wvl <- PRISMA_wvl_info$wl
   
   bad_bands_vector <- c(
-      837, 872,
-      922, 962,
-      1098, 1122,
-      1150, 1155,
-      1184, 1209,
-      1249, 1286,
-      1338, 1471,
-      1792, 1960
+    837, 872,
+    922, 962,
+    1098, 1122,
+    1150, 1155,
+    1184, 1209,
+    1249, 1286,
+    1338, 1471,
+    1792, 1960
   )
   
   #findInterval() produce a vector containing the interval number in which the value falls.The numbers produced by findInterval start with 0 if the value is smaller than the minimum of the first interval, hence if the interval number is uneven, the bands falls in a bad bands range. The X %% 2) != 0 finds all uneven values.
@@ -960,7 +1011,6 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
 #_____________________________________________________________________
 add_PRISMA_metadata <- function(input_file_path,
                                 PRISMA_config, #here I get the wavelength of the smoothed
-                                PRISMA_bad_bands_table, #here I get the bad bands
                                 PRISMA_angle_info, #here I get the time
                                 PRISMA_wvl_info, #here I get the wavelength of the not smoothed
                                 cloud_present_in_stack,
@@ -1096,7 +1146,7 @@ naming_convention <- function(out_folder,
     time <- hms::as_hms(PRISMA_angle_info$date)
     time_string <- paste0(as.POSIXlt(time)$hour,as.POSIXlt(time)$min,base::round(as.POSIXlt(time)$sec,0))
     date_string <- gsub("-","",date)
-    datetime <- paste0(date_string,"T",time_string) 
+    datetime <- paste0(date_string,"t",time_string) 
     
     if(grepl(pattern = "FULL_CLD.tif",x = input_file_path)){
       #in case the unchained "cloud" has been performed add also "F", i.e. fixing cloud mask
@@ -1126,20 +1176,3 @@ get_starting_prisma_image <- function(unchained_out_folder,
   return(input_file_path)
 }
 
-#_____________________________________________________________________
-#run_ISOFIT ----
-#_____________________________________________________________________
-
-run_ISOFIT <- function(rdn, loc, obs, out_dir) {
-    cmd <- sprintf(
-        "docker exec isofit bash -c '
-      isofit apply_oe \
-        %s %s %s %s ang \
-        --surface_path %s/configs/surface.json \
-        --emulator_base $(isofit path srtmnet --key file) \
-        --n_cores 10 --presolve
-    '",
-        rdn, loc, obs, out_dir, out_dir
-    )
-    system(cmd)  # blocks until done
-}

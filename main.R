@@ -32,7 +32,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","cloud","coreg","isofit")
+procedure_order <- c("read","coreg","isofit")
 #elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________
@@ -161,9 +161,6 @@ PRISTAR_processing <- function(root_folder){
   PRISMA_config <- tidytable::fread(base::paste0("/config_folder/PRISMA_spectral_configuration.csv")) |>
     tidytable::mutate(band_row = tidytable::row_number()) 
   
-  # PRISMA_bad_bands_table <- tidytable::fread(base::paste0("/config_folder/PRISMA_band_selections.csv")) |>
-  #   tidytable::filter(BB_SUPER_V3 == 1)
-  
   number_of_chained_operations <- length(select_chained_operations)
   name_of_current_output_folder <- ""
   
@@ -257,7 +254,6 @@ PRISTAR_processing <- function(root_folder){
         smooth_spectra(input_file_path = input_file_path,
                        PRISMA_config = PRISMA_config,
                        PRISMA_wvl_info = PRISMA_wvl_info,
-                       #PRISMA_bad_bands_table = PRISMA_bad_bands_table,
                        cloud_present_in_stack = cloud_present_in_stack,
                        full_230_bands = full_230_bands,
                        n_threads = n_threads,
@@ -271,7 +267,6 @@ PRISTAR_processing <- function(root_folder){
                             PRISMA_wvl_info = PRISMA_wvl_info ,
                             PRISMA_angle_info = PRISMA_angle_info,
                             PRISMA_config = PRISMA_config,
-                            #PRISMA_bad_bands_table = PRISMA_bad_bands_table,
                             cloud_present_in_stack = cloud_present_in_stack,
                             output_file_path = output_file_path,
                             full_230_bands = full_230_bands)
