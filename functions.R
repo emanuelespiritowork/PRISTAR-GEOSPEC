@@ -112,56 +112,61 @@ prismaread_function <- function(product_type,
     join_priority = "SWIR",
     LATLON = LATLON,
     PAN = F,
-    CLOUD = CLOUD,
+    CLOUD = T,
     overwrite = T,
-    ATCOR = ATCOR
+    ATCOR = T
   )
   
-  if(product_type == "L1"){
-    angle_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
-    atcor_parameters(angle_file_path, root_folder)
-  }
+  angle_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO.ang$", full.names = T, recursive = F)
+  atcor_parameters(angle_file_path = angle_file_path, root_folder = root_folder, product_type = product_type)
   
 }
 
 atcor_parameters <- function(angle_file_path,
-                             root_folder
+                             root_folder,
+                             product_type
                              ){
-  cat(x = root_folder,
-      file = '/config_folder/angle_config.txt')
+  
   prismaread_angle_file <- utils::read.table(angle_file_path, header =T)
-  PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
   
-  result_sensor_angles <- httr2::request("http://arosics:8000/run") |>
-    httr2::req_body_json(list(command = PRISMA_angle_command)) |>
-    httr2::req_perform()
-  
-  res <- result_sensor_angles |>
-    httr2::resp_body_json()
-  
-  var <- res$stdout
-  
-  sensor_zenith <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[1]], "float64")[[1]][[2]]))
-  
-  sensor_azimuth <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[2]], "float64")[[1]][[2]]))
-  
-  slant_path <- gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[3]], "float64")[[1]][[2]])))
-  
-  prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
-  prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
-  prismaread_angle_file$slant_path <- as.numeric(slant_path)
-  
-  if(prismaread_angle_file$sensor_azimuth < 0){
-    prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
+  if(product_type == "L1"){
+    cat(x = root_folder,
+        file = '/config_folder/angle_config.txt')
+    
+    PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
+    
+    result_sensor_angles <- httr2::request("http://arosics:8000/run") |>
+      httr2::req_body_json(list(command = PRISMA_angle_command)) |>
+      httr2::req_perform()
+    
+    res <- result_sensor_angles |>
+      httr2::resp_body_json()
+    
+    var <- res$stdout
+    
+    sensor_zenith <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[1]], "float64")[[1]][[2]]))
+    
+    sensor_azimuth <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[2]], "float64")[[1]][[2]]))
+    
+    slant_path <- gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[3]], "float64")[[1]][[2]])))
+    
+    prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
+    prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
+    prismaread_angle_file$slant_path <- as.numeric(slant_path)
+    
+    if(prismaread_angle_file$sensor_azimuth < 0){
+      prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
+    }
+    
   }
   
   suppressWarnings(dir.create(paste0(base::dirname(angle_file_path),"/ATCOR/")))
   
   write.table(prismaread_angle_file,paste0(base::dirname(angle_file_path),"/ATCOR/all_angles_file.csv"), 
-            quote = F, 
-            row.names = F,
-            append = F,
-            sep = ",")
+              quote = F, 
+              row.names = F,
+              append = F,
+              sep = ",")
   
   print("Please read the ATCOR_readme.txt file for info on angles.")
   
@@ -188,7 +193,7 @@ isofit_atcor <- function(output_file_path,
   
   #convert in ENVI format
   rdn_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn",basename(input_file_path))))
-  terra::writeRaster(raster_read,
+  terra::writeRaster(raster_read/10, #convert the radiance units https://github.com/emanuelespiritowork/PRISTAR-GEOSPEC/issues/43
                      rdn_file_path,
                      overwrite = T,
                      # gdal = "ENVI",
@@ -1131,7 +1136,7 @@ naming_convention <- function(out_folder,
     letter_to_add <- "A"
   }
   
-  #STILL TO BE DISCUSSED
+  #STILL TO BE DISCUSSED https://github.com/emanuelespiritowork/PRISTAR-GEOSPEC/issues/31
   if(current_operation == "inject"){
     #inject L0 into L1
     letter_to_add <- "I"

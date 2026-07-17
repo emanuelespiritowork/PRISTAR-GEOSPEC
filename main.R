@@ -32,7 +32,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg","isofit")
+procedure_order <- c("read","coreg","regrid","smooth","crop","addmetadata")
 #elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________
@@ -163,6 +163,8 @@ PRISTAR_processing <- function(root_folder){
   
   number_of_chained_operations <- length(select_chained_operations)
   name_of_current_output_folder <- ""
+  
+  print(paste0("Working on ",root_folder))
   
   if(number_of_chained_operations > 0){
     for(index_of_chained_operations in 1:number_of_chained_operations){
@@ -295,13 +297,14 @@ PRISTAR_processing <- function(root_folder){
       }
       
     }
+    invisible(gc())
   }
   
   
   
   
   
-  
+  invisible(gc())
   
   
 }
