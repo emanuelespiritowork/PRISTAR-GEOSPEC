@@ -309,5 +309,5 @@ PRISTAR_processing <- function(root_folder){
   
 }
 
-lapply(root_folders, PRISTAR_processing)
+lapply(rev(root_folders), PRISTAR_processing)
 

@@ -574,6 +574,8 @@ coregistration_to_s2 <- function(s2_path,
     httr2::req_body_json(list(command = arosics_run_command)) |>
     httr2::req_perform() 
   
+  invisible(gc())
+  
   # base::system(arosics_run_command)
   
   # import GCPs
@@ -836,7 +838,7 @@ coregistration_to_s2 <- function(s2_path,
   }
   
   
-  
+  invisible(gc())
   #AAAAA ALTRA IDEA: se utilizzassi prima i tie points come quota per fare correzione dem e poi usassi invece riconoscimento 2D?
   #in questo modo prima correggo gli artefatti dovuti alla visualizzazione del satellite e poi coregistro le due immagini
   
@@ -897,11 +899,16 @@ crop_function <- function(master_image_path,
     slave <- reproject
   }
   
-  terra::crop(x = slave,
-              y = master,
-              filename = output_file_path,
-              # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
-              overwrite = T)
+  slave_resample <- terra::resample(slave, master, method = "near") #this is needed when not using regrid before
+  slave_crop <- terra::crop(slave_resample, master) #this crop the maximum extent of slave to the maximum extent of master so 
+  #the slave_crop will be in the rectangle around the master
+  slave_mask <- terra::mask(slave_crop, master[[1]]) #this will put to NA all the pixels that in the rectangle around master have no value in master
+  #thus keeping only the master footprint
+  
+  terra::writeRaster(x = slave_mask,
+                     filename = output_file_path,
+                     # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
+                     overwrite = T)
 }
 
 #_____________________________________________________________________
