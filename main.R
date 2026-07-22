@@ -32,7 +32,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg","regrid","smooth","crop","addmetadata")
+procedure_order <- c("read","coreg","addmetadata")
 #elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________
@@ -291,7 +291,6 @@ PRISTAR_processing <- function(root_folder){
                input_file_path = input_file_path,
                PRISMA_wvl_info = PRISMA_wvl_info, 
                root_folder = root_folder,
-               he5_path = he5_path,
                PRISMA_angle_info = PRISMA_angle_info)
         
       }
@@ -309,5 +308,5 @@ PRISTAR_processing <- function(root_folder){
   
 }
 
-lapply(rev(root_folders), PRISTAR_processing)
+lapply(root_folders, PRISTAR_processing)
 

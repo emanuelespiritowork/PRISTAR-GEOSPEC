@@ -182,7 +182,6 @@ isofit_atcor <- function(output_file_path,
                          input_file_path, 
                          PRISMA_wvl_info, 
                          root_folder,
-                         he5_file_path,
                          PRISMA_angle_info){
   #####################
   ####### Creation of RDN file
