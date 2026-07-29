@@ -135,12 +135,8 @@ atcor_parameters <- function(angle_file_path,
     
     PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
     
-    result_sensor_angles <- httr2::request("http://arosics:8000/run") |>
-      httr2::req_body_json(list(command = PRISMA_angle_command)) |>
-      httr2::req_perform()
-    
-    res <- result_sensor_angles |>
-      httr2::resp_body_json()
+    res <- dockernet_call(dockername = "arosics", 
+                   command = PRISMA_angle_command)
     
     var <- res$stdout
     
@@ -402,12 +398,8 @@ isofit_atcor <- function(output_file_path,
     paste0(base::dirname(output_file_path),"/results"),
     "/config_folder/surface_20240103_enmap_OG.json")
   
-  result_isofit_command <- httr2::request("http://isofit:8000/run") |>
-    httr2::req_body_json(list(command = isofit_command)) |>
-    httr2::req_perform()
-  
-  res <- result_isofit_command |>
-    httr2::resp_body_json()
+  res <- dockernet_call(dockername = "isofit",
+                        command = isofit_command)
   
   var <- res$stderr
   
@@ -569,9 +561,8 @@ coregistration_to_s2 <- function(s2_path,
   arosics_run_command <- base::paste(arosics_local_path, "-v -r", single_band_reference_image, "-t", single_band_image_to_coregister, "-l", base::normalizePath(path=base::paste(output_directory, "/", "AROSICS_coregistration_info.json", sep=""), winslash="/", mustWork=FALSE), "-m", base::normalizePath(path=base::paste(output_directory, "/", "GCP.txt", sep=""), winslash="/", mustWork=FALSE), "-g", base::normalizePath(path=base::paste(output_directory, "/", "points.gpkg", sep=""), winslash="/", mustWork=FALSE), sep=" ")
   # run AROSICS to get GCPs
   
-  result_arosics <- httr2::request("http://arosics:8000/run") |>
-    httr2::req_body_json(list(command = arosics_run_command)) |>
-    httr2::req_perform() 
+  res <- dockernet_call(dockername = "arosics", 
+                        command = arosics_run_command)
   
   invisible(gc())
   
@@ -818,9 +809,8 @@ coregistration_to_s2 <- function(s2_path,
     writeLines(GDAL_VRT_run_command, base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))
     cmd_gdal_translate <- paste0("sh ", base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep=""))
     
-    result_gdal_translate <- httr2::request("http://arosics:8000/run") |>
-      httr2::req_body_json(list(command = cmd_gdal_translate)) |>
-      httr2::req_perform() 
+    res <- dockernet_call(dockername = "arosics", 
+                          command = cmd_gdal_translate)
     
     # base::system(paste0("sh ", base::paste(output_directory, "/", "GDAL_VRT_run_command.sh", sep="")))
     
@@ -829,9 +819,8 @@ coregistration_to_s2 <- function(s2_path,
     # warp input image using second order polynomial
     GDAL_WARP_run_command <- base::paste("gdalwarp -q -of GTiff -r near -order 2 -tap -tr 30 30 -t_srs", target_epsg, base::normalizePath(path=base::paste(output_directory, "/", "multiband_file_with_GCP.vrt", sep=""), winslash="/", mustWork=TRUE), output_file_path, sep=" ")
     
-    result_gdalwarp <- httr2::request("http://arosics:8000/run") |>
-      httr2::req_body_json(list(command = GDAL_WARP_run_command)) |>
-      httr2::req_perform() 
+    res <- dockernet_call(dockername = "arosics", 
+                          command = GDAL_WARP_run_command)
     
     # base::system(GDAL_WARP_run_command)
   }
@@ -1185,5 +1174,30 @@ get_starting_prisma_image <- function(unchained_out_folder,
   }
   
   return(input_file_path)
+}
+
+dockernet_call <- function(dockername, #arosics or isofit 
+                           command){
+  request <- httr2::request(paste0("http://",dockername,":8000/run")) |>
+    httr2::req_body_json(list(command = command)) |>
+    httr2::req_options(
+      timeout_ms = 333333000,       
+      low_speed_limit = 0,    #Set to 0 to disable
+      low_speed_time  = 3600  #seconds
+    ) |>
+    httr2::req_perform()
+  
+  res <- request |>
+    httr2::resp_body_json()
+  
+  return(res)
+}
+
+create_thumbnail <- function(input_file_path,
+                             out_folder){
+  read_raster <- terra::rast(input_file_path)
+  terra::writeRaster(x = read_raster,
+                     filename = paste0(dirname(out_folder), "/", gsub("*.tif$","_quicklook.png",basename(input_file_path))))
+  return(0)
 }
 

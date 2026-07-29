@@ -32,7 +32,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg","addmetadata")
+procedure_order <- c("read","coreg","isofit")
 #elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________
@@ -177,6 +177,8 @@ PRISTAR_processing <- function(root_folder){
       if(index_of_chained_operations == 1){
         input_file_path <- get_starting_prisma_image(unchained_out_folder = unchained_out_folder,
                                                      cloud_present_in_stack = cloud_present_in_stack)
+        create_thumbnail(input_file_path = input_file_path,
+                         out_folder = out_folder)
       }else{
         input_file_path <- output_file_path
       }
