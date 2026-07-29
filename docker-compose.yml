@@ -3,11 +3,12 @@ services:
     image: lorenzopari/test_pristar:0.4
     container_name: pristar-geospec
     ports: ["${PORT_rstudio}:8787"]
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT}
     environment:
       DISABLE_AUTH: true
-    mem_limit: ${MEM_LIMIT}
-    memswap_limit: ${MEM_LIMIT}
-    cpus: ${CPUS}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -17,6 +18,10 @@ services:
   isofit:
     image: lorenzopari/isofit-api:4.0.0
     container_name: PRISTAR_isofit
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -25,6 +30,10 @@ services:
   arosics:
     image: lorenzopari/arosics:1.13.2
     container_name: PRISTAR_arosics
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder 
