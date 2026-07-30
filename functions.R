@@ -1195,9 +1195,22 @@ dockernet_call <- function(dockername, #arosics or isofit
 
 create_thumbnail <- function(input_file_path,
                              out_folder){
-  read_raster <- terra::rast(input_file_path)
-  terra::writeRaster(x = read_raster,
-                     filename = paste0(dirname(out_folder), "/", gsub("*.tif$","_quicklook.png",basename(input_file_path))))
+  read_raster <- terra::rast(input_file_path, lyrs = c(10,20,31,52,124))
+  filename_rgb <- paste0(dirname(out_folder), "/", gsub("*.tif$","_rgb.png",basename(input_file_path)))
+  filename_false <- paste0(dirname(out_folder), "/", gsub("*.tif$","_false.png",basename(input_file_path)))
+  filename_swir <- paste0(dirname(out_folder), "/", gsub("*.tif$","_swir.png",basename(input_file_path)))
+  png(filename = filename_rgb)
+  terra::plotRGB(x = read_raster,
+                 r = 3, g = 2, b = 1, stretch = "hist")
+  dev.off()
+  png(filename = filename_false)
+  terra::plotRGB(x = read_raster,
+                 r = 4, g = 3, b = 2, stretch = "hist")
+  dev.off()
+  png(filename = filename_swir)
+  terra::plotRGB(x = read_raster,
+                 r = 5, g = 4, b = 3, stretch = "hist")
+  dev.off()
   return(0)
 }
 
