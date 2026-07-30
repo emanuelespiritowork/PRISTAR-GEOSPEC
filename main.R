@@ -32,7 +32,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 #for expert users:
 #procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
 # procedure_order <- c("inject","read","coreg")
-procedure_order <- c("read","coreg","isofit")
+procedure_order <- c("read","coreg","isofit","regrid","smooth","crop")
 #elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
 
 #_____________________________________________________________________

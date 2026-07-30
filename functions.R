@@ -178,6 +178,7 @@ isofit_atcor <- function(output_file_path,
                          input_file_path, 
                          PRISMA_wvl_info, 
                          root_folder,
+                         cloud_present_in_stack,
                          PRISMA_angle_info){
   #####################
   ####### Creation of RDN file
@@ -401,10 +402,92 @@ isofit_atcor <- function(output_file_path,
   res <- dockernet_call(dockername = "isofit",
                         command = isofit_command)
   
-  var <- res$stderr
+  #the header of the output ENVI file lacks the geographic coordinates that we can steal from rdn file
   
-  #ADD CLOUD MASK
+  all_header_parameters <- read_ENVI_header(header_path = rdn_hdr_file_path)
   
+  file_to_copy <- terra::rast(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"))
+  
+  terra::writeRaster(x = file_to_copy,
+                     filename = gsub("*.tif$",".envi",output_file_path),
+                     overwrite = T)
+  
+  file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"),
+            to = gsub("*.tif$","",output_file_path))
+  
+  file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl.hdr"),
+            to = gsub("*.tif$",".hdr",output_file_path))
+  
+  old_header <- read_ENVI_header(header_path = gsub("*.tif$",".hdr",output_file_path))
+  
+  file.remove(gsub("*.tif$",".hdr",output_file_path))
+  
+  old_header <- old_header[!grepl(x = old_header,
+                    pattern = "band names")]
+  
+  old_header <- old_header[!grepl(x = old_header,
+                                  pattern = "wavelength")]
+  
+  old_header <- old_header[!grepl(x = old_header,
+                                  pattern = "fwhm")]
+  
+  map_info <- all_header_parameters[grepl(x = all_header_parameters,
+        pattern = "map info")]
+  
+  band_names <- all_header_parameters[grepl(x = all_header_parameters,
+                                          pattern = "band names")]
+  
+  band_names <- band_names[grepl(pattern = "B", x = band_names)]
+  
+  wavelengths <- all_header_parameters[grepl(x = all_header_parameters,
+                                             pattern = "wavelength")]
+  
+  fwhm <- all_header_parameters[grepl(x = all_header_parameters,
+                                      pattern = "fwhm")]
+  
+  CRS <- all_header_parameters[grepl(x = all_header_parameters,
+                                      pattern = "coordinate system")]
+  
+  writeLines(old_header, 
+      con = gsub("*.tif$",".hdr",output_file_path))
+  
+  cat(c(map_info,"\n"), 
+      file = gsub("*.tif$",".hdr",output_file_path),
+      append = T)
+  
+  cat(c(paste0(band_names, collapse = "\n"),"\n"), 
+      file = gsub("*.tif$",".hdr",output_file_path),
+      append = T)
+  
+  cat(c(paste0(wavelengths, collapse = "\n"), "\n"),
+      file = gsub("*.tif$",".hdr",output_file_path),
+      append = T)
+  
+  cat(c(paste0(fwhm, collapse = "\n"),"\n"),
+      file = gsub("*.tif$",".hdr",output_file_path),
+      append = T)
+  
+  cat(c(paste0(CRS, collapse = "\n"), "\n"),
+      file = gsub("*.tif$",".hdr",output_file_path),
+      append = T)
+  
+  envi_file_read <- terra::rast(gsub("*.tif$","",output_file_path))
+  
+  if(cloud_present_in_stack){
+    cloud_mask <- terra::rast(input_file_path, lyrs = 231)
+    output_with_cloud_mask <- c(envi_file_read,cloud_mask)
+    names(output_with_cloud_mask) <- c(names(envi_file_read),"cloud_mask")
+    terra::writeRaster(x = output_with_cloud_mask,
+                       filename = output_file_path,
+                       overwrite = T)
+    #PROBLEM: here there could be some problems with .hdr file because we have to add cloud mask inside band names and wavelengths
+  }else{
+    terra::writeRaster(x = envi_file_read,
+                       filename = output_file_path,
+                       overwrite = T)
+  }
+  
+  file.remove(gsub("*.tif$","",output_file_path))
 }
 
 run_ISOFIT <- function(rdn, loc, obs, out_dir) {
@@ -1161,6 +1244,7 @@ naming_convention <- function(out_folder,
   return(output_file_path)
 }
 
+#get_starting_prisma_image ----
 get_starting_prisma_image <- function(unchained_out_folder,
                                       cloud_present_in_stack){
   if(cloud_present_in_stack){
@@ -1176,6 +1260,7 @@ get_starting_prisma_image <- function(unchained_out_folder,
   return(input_file_path)
 }
 
+#dockernet_call ----
 dockernet_call <- function(dockername, #arosics or isofit 
                            command){
   request <- httr2::request(paste0("http://",dockername,":8000/run")) |>
@@ -1193,6 +1278,7 @@ dockernet_call <- function(dockername, #arosics or isofit
   return(res)
 }
 
+#create_thumbnail ----
 create_thumbnail <- function(input_file_path,
                              out_folder){
   read_raster <- terra::rast(input_file_path, lyrs = c(10,20,31,52,124))
@@ -1212,5 +1298,29 @@ create_thumbnail <- function(input_file_path,
                  r = 5, g = 4, b = 3, stretch = "hist")
   dev.off()
   return(0)
+}
+
+#read_ENVI_header ----
+read_ENVI_header <- function(header_path){
+  header_read <- invisible(readLines(header_path))
+  
+  with_both_parenthesis <- header_read[grepl("\\{.*\\}",as.list(header_read))] #ACCEPTED here we find all the lines that contains both { and }
+  vector <- 1:length(as.list(header_read))
+  start <- vector[grepl("\\{",as.list(header_read)) & !grepl("\\}",as.list(header_read))] #NOT ACCEPTED start
+  end <- vector[grepl("\\}",as.list(header_read)) & !grepl("\\{",as.list(header_read))] #NOT ACCEPTED end
+  from_start_to_end <- c()
+  for(i in 1:length(start)){
+    from_start_to_end[i] <- paste0(header_read[start[i]:end[i]], collapse = "") 
+  }
+  elaborated_indices <- sort(unique(c(c(rbind(start,end)),
+                                      which((findInterval(x = vector, vec = c(rbind(start,end))) %% 2) != 0),
+                                      which(grepl("\\{.*\\}",as.list(header_read))))))
+  not_elaborated <- header_read[! vector %in% elaborated_indices]
+  
+  all_header_parameters <- c(not_elaborated,
+                             from_start_to_end,
+                             with_both_parenthesis)
+  
+  return(all_header_parameters)
 }
 
