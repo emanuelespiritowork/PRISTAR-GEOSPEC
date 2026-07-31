@@ -9,6 +9,7 @@ services:
           memory: ${MEM_LIMIT}
     environment:
       DISABLE_AUTH: true
+      ROOT: true
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder

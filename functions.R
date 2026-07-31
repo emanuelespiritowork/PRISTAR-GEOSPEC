@@ -404,26 +404,49 @@ isofit_atcor <- function(output_file_path,
   
   #the header of the output ENVI file lacks the geographic coordinates that we can steal from rdn file
   
-  all_header_parameters <- read_ENVI_header(header_path = rdn_hdr_file_path)
+  new_header <- read_ENVI_header(header_path = rdn_hdr_file_path)
   
-  file_to_copy <- terra::rast(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"))
-  
-  terra::writeRaster(x = file_to_copy,
-                     filename = gsub("*.tif$",".envi",output_file_path),
-                     overwrite = T)
+  # file_to_copy <- terra::rast(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"))
+  # 
+  # terra::writeRaster(x = file_to_copy,
+  #                    filename = gsub("*.tif$",".envi",output_file_path),
+  #                    overwrite = T)
   
   file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"),
-            to = gsub("*.tif$","",output_file_path))
+            to = gsub("*.tif$","",output_file_path),
+            copy.mode = F)
   
   file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl.hdr"),
-            to = gsub("*.tif$",".hdr",output_file_path))
+            to = gsub("*.tif$",".hdr",output_file_path),
+            copy.mode = F)
+  
+  # file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_h2o.hdr"),
+  #           to = dirname(gsub("*.tif$",".hdr",output_file_path)))
+  
+  # file.access(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl"), 4)
+  # 
+  # file.access(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl.hdr"), 4)
+  # 
+  # file.access(paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_h2o.hdr"), 4)
+  # 
+  # system()
+  
+  # file.copy(from = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_h20.hdr"),
+  #           to = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl.hdr"))
   
   old_header <- read_ENVI_header(header_path = gsub("*.tif$",".hdr",output_file_path))
+  # old_header <- read_ENVI_header(header_path = paste0(dirname(output_file_path),"/results/output/",strsplit(x = basename(rdn_file_path), split = "_")[[1]][[1]],"_rfl.hdr"))
   
   file.remove(gsub("*.tif$",".hdr",output_file_path))
   
   old_header <- old_header[!grepl(x = old_header,
+                                  pattern = "map info")]
+  
+  old_header <- old_header[!grepl(x = old_header,
                     pattern = "band names")]
+  
+  old_header <- old_header[!grepl(x = old_header,
+                                  pattern = "bbl")]
   
   old_header <- old_header[!grepl(x = old_header,
                                   pattern = "wavelength")]
@@ -431,21 +454,21 @@ isofit_atcor <- function(output_file_path,
   old_header <- old_header[!grepl(x = old_header,
                                   pattern = "fwhm")]
   
-  map_info <- all_header_parameters[grepl(x = all_header_parameters,
+  map_info <- new_header[grepl(x = new_header,
         pattern = "map info")]
   
-  band_names <- all_header_parameters[grepl(x = all_header_parameters,
+  band_names <- new_header[grepl(x = new_header,
                                           pattern = "band names")]
   
   band_names <- band_names[grepl(pattern = "B", x = band_names)]
   
-  wavelengths <- all_header_parameters[grepl(x = all_header_parameters,
+  wavelengths <- new_header[grepl(x = new_header,
                                              pattern = "wavelength")]
   
-  fwhm <- all_header_parameters[grepl(x = all_header_parameters,
+  fwhm <- new_header[grepl(x = new_header,
                                       pattern = "fwhm")]
   
-  CRS <- all_header_parameters[grepl(x = all_header_parameters,
+  CRS <- new_header[grepl(x = new_header,
                                       pattern = "coordinate system")]
   
   writeLines(old_header, 
