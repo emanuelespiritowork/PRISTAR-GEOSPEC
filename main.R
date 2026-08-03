@@ -293,8 +293,19 @@ PRISTAR_processing <- function(root_folder){
                input_file_path = input_file_path,
                PRISMA_wvl_info = PRISMA_wvl_info, 
                root_folder = root_folder,
-               PRISMA_angle_info = PRISMA_angle_info)
+               PRISMA_angle_info = PRISMA_angle_info,
+               cloud_present_in_stack = cloud_present_in_stack)
         
+      }
+      
+      if(index_of_chained_operations == 1 | current_operation == "smooth"){
+        print("ADD PRISMA METADATA")
+        add_PRISMA_metadata(output_file_path = output_file_path,
+                            PRISMA_wvl_info = PRISMA_wvl_info ,
+                            PRISMA_angle_info = PRISMA_angle_info,
+                            PRISMA_config = PRISMA_config,
+                            cloud_present_in_stack = cloud_present_in_stack,
+                            full_230_bands = full_230_bands)
       }
       
     }

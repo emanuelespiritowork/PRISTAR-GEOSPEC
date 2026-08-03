@@ -511,6 +511,10 @@ isofit_atcor <- function(output_file_path,
   }
   
   file.remove(gsub("*.tif$","",output_file_path))
+  file.remove(gsub("*.tif$",".hdr",output_file_path))
+  file.remove(list.files(path = dirname(output_file_path),
+                         pattern = "*.xml$",
+                         full.names = T))
 }
 
 run_ISOFIT <- function(rdn, loc, obs, out_dir) {
@@ -1115,16 +1119,15 @@ spline_fun <- function(pixel, band_center_input, bad_bands_pos, band_center_outp
 #_____________________________________________________________________
 #add_PRISMA_metadata ----
 #_____________________________________________________________________
-add_PRISMA_metadata <- function(input_file_path,
+add_PRISMA_metadata <- function(output_file_path,
                                 PRISMA_config, #here I get the wavelength of the smoothed
                                 PRISMA_angle_info, #here I get the time
                                 PRISMA_wvl_info, #here I get the wavelength of the not smoothed
                                 cloud_present_in_stack,
-                                output_file_path,
                                 full_230_bands
                                 ){
   
-  processing <- tools::file_path_sans_ext(strsplit(basename(input_file_path),"_")[[1]][[length(strsplit(basename(input_file_path),"_")[[1]])]])
+  processing <- tools::file_path_sans_ext(strsplit(basename(output_file_path),"_")[[1]][[length(strsplit(basename(output_file_path),"_")[[1]])]])
   
   if(grepl(pattern = "S", x = processing)){
     
@@ -1157,7 +1160,7 @@ add_PRISMA_metadata <- function(input_file_path,
   }
   
   #read raster
-  input_file <- terra::rast(input_file_path)
+  input_file <- terra::rast(output_file_path)
   
   #write time
   datetime <- as.POSIXlt(PRISMA_angle_info$date)
@@ -1172,6 +1175,25 @@ add_PRISMA_metadata <- function(input_file_path,
   
   #write band names, wavelengths and fwhms
   hdr_file_path <- gsub("\\.envi$",".hdr",output_file_path_envi)
+  
+  old_header <- read_ENVI_header(header_path = hdr_file_path)
+  
+  old_header <- old_header[!grepl(pattern = "band names",
+                                 x = old_header)]
+  
+  old_header <- old_header[!grepl(pattern = "wavelength",
+                                  x = old_header)]
+  
+  old_header <- old_header[!grepl(pattern = "fwhm",
+                                  x = old_header)]
+  
+  old_header <- old_header[!grepl(x = old_header,
+                                  pattern = "bbl")]
+  
+  file.remove(hdr_file_path)
+  
+  writeLines(text = old_header,
+             con = hdr_file_path)
   
   cat(paste0("band names = {",paste0(layer_names, collapse = ", "), "}"),
       file = hdr_file_path,
@@ -1194,7 +1216,22 @@ add_PRISMA_metadata <- function(input_file_path,
                          pattern = "*.xml$",
                          full.names = T))
   
+  aaa = terra::rast(output_file_path_envi)
   
+  terra::writeRaster(aaa,
+                     output_file_path,
+                     overwrite =T)
+  
+  
+  file.remove(list.files(dirname(output_file_path),
+                         pattern = "*.envi$",
+                         full.names = T))
+  
+  file.remove(gsub("*.tif$",".hdr",output_file_path))
+  
+  file.remove(list.files(dirname(output_file_path),
+                         pattern = "*.aux.json$",
+                         full.names = T))
 }
 
 #_____________________________________________________________________
