@@ -188,7 +188,7 @@ isofit_atcor <- function(output_file_path,
   raster_read <- terra::rast(input_file_path, lyrs = c(1:230))
   
   #convert in ENVI format
-  rdn_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_rdn",basename(input_file_path))))
+  rdn_file_path <- paste0(base::dirname(output_file_path),"/",gsub("_L1_","",gsub("*.tif$","_rdn",basename(input_file_path))))
   terra::writeRaster(raster_read/10, #convert the radiance units https://github.com/emanuelespiritowork/PRISTAR-GEOSPEC/issues/43
                      rdn_file_path,
                      overwrite = T,
@@ -259,7 +259,7 @@ isofit_atcor <- function(output_file_path,
                   latitude_mask,
                   dtm_mask)
   
-  loc_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_loc",basename(input_file_path))))
+  loc_file_path <- paste0(base::dirname(output_file_path),"/",gsub("_L1_","",gsub("*.tif$","_loc",basename(input_file_path))))
   terra::writeRaster(loc_raster,
                      loc_file_path,
                      overwrite = T,
@@ -370,7 +370,7 @@ isofit_atcor <- function(output_file_path,
                   utc_mask,
                   earth_sun_distance_mask) 
   
-  obs_file_path <- gsub("_L1_","",paste0(base::dirname(output_file_path),"/",gsub("*.tif$","_obs",basename(input_file_path))))
+  obs_file_path <- paste0(base::dirname(output_file_path),"/",gsub("_L1_","",gsub("*.tif$","_obs",basename(input_file_path))))
   terra::writeRaster(obs_raster,
                      obs_file_path,
                      overwrite = T,
@@ -401,6 +401,10 @@ isofit_atcor <- function(output_file_path,
   
   res <- dockernet_call(dockername = "isofit",
                         command = isofit_command)
+  
+  dir.create(paste0(base::dirname(output_file_path),"/results"))
+  
+  write(x = res$stderr, paste0(base::dirname(output_file_path),"/results/log.txt"))
   
   #the header of the output ENVI file lacks the geographic coordinates that we can steal from rdn file
   
@@ -496,22 +500,25 @@ isofit_atcor <- function(output_file_path,
   
   envi_file_read <- terra::rast(gsub("*.tif$","",output_file_path))
   
+  envi_file_mask <- terra::mask(x = envi_file_read, 
+                                mask = raster_read)
+  
   if(cloud_present_in_stack){
     cloud_mask <- terra::rast(input_file_path, lyrs = 231)
-    output_with_cloud_mask <- c(envi_file_read,cloud_mask)
-    names(output_with_cloud_mask) <- c(names(envi_file_read),"cloud_mask")
+    output_with_cloud_mask <- c(envi_file_mask,cloud_mask)
+    names(output_with_cloud_mask) <- c(names(envi_file_mask),"cloud_mask")
     terra::writeRaster(x = output_with_cloud_mask,
                        filename = output_file_path,
                        overwrite = T)
     #PROBLEM: here there could be some problems with .hdr file because we have to add cloud mask inside band names and wavelengths
   }else{
-    terra::writeRaster(x = envi_file_read,
+    terra::writeRaster(x = envi_file_mask,
                        filename = output_file_path,
                        overwrite = T)
   }
   
   file.remove(gsub("*.tif$","",output_file_path))
-  file.remove(gsub("*.tif$",".hdr",output_file_path))
+  # file.remove(gsub("*.tif$",".hdr",output_file_path))
   file.remove(list.files(path = dirname(output_file_path),
                          pattern = "*.xml$",
                          full.names = T))
@@ -1227,11 +1234,11 @@ add_PRISMA_metadata <- function(output_file_path,
                          pattern = "*.envi$",
                          full.names = T))
   
-  file.remove(gsub("*.tif$",".hdr",output_file_path))
+  # file.remove(gsub("*.tif$",".hdr",output_file_path))
   
-  file.remove(list.files(dirname(output_file_path),
-                         pattern = "*.aux.json$",
-                         full.names = T))
+  # file.remove(list.files(dirname(output_file_path),
+  #                        pattern = "*.aux.json$",
+  #                        full.names = T))
 }
 
 #_____________________________________________________________________
@@ -1287,7 +1294,7 @@ naming_convention <- function(out_folder,
   }else{
     date <- as.Date(PRISMA_angle_info$date)
     time <- hms::as_hms(PRISMA_angle_info$date)
-    time_string <- paste0(as.POSIXlt(time)$hour,as.POSIXlt(time)$min,base::round(as.POSIXlt(time)$sec,0))
+    time_string <- paste0(sprintf("%02d", as.POSIXlt(time)$hour),sprintf("%02d", as.POSIXlt(time)$min),sprintf("%02d", base::round(as.POSIXlt(time)$sec,0)))
     date_string <- gsub("-","",date)
     datetime <- paste0(date_string,"t",time_string) 
     

@@ -26,14 +26,19 @@ PRS_band_for_coreg <- 52
 shift <- F
 shift_x <- -8000
 shift_y <- 0
-n_threads <- 7
+n_threads <- 10
 dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 
 #for expert users:
-#procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth","addmetadata")
+#procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
 # procedure_order <- c("inject","read","coreg")
+
+#For L1
 procedure_order <- c("read","coreg","isofit","regrid","smooth","crop")
-#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho,addmetadata, isofit
+#For L2
+# procedure_order <- c("read","coreg","regrid","smooth","crop")
+
+#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho, isofit
 
 #_____________________________________________________________________
 # Main -----
@@ -48,8 +53,6 @@ PRISTAR_processing <- function(root_folder){
   dir.create(out_folder,
              recursive = F,
              showWarnings = T)
-  
-  
   
   #1.1 identify file paths ----
   he5_path <- base::list.files(path = root_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
@@ -264,19 +267,6 @@ PRISTAR_processing <- function(root_folder){
                        output_file_path = output_file_path)
       }
       
-      ##1.3.2.5 "addmetadata" operation ----
-      if(current_operation == "addmetadata"){
-        print("ADD PRISMA METADATA")
-        add_PRISMA_metadata(input_file_path = input_file_path,
-                            PRISMA_wvl_info = PRISMA_wvl_info ,
-                            PRISMA_angle_info = PRISMA_angle_info,
-                            PRISMA_config = PRISMA_config,
-                            cloud_present_in_stack = cloud_present_in_stack,
-                            output_file_path = output_file_path,
-                            full_230_bands = full_230_bands)
-        
-      }
-      
       ##1.3.2.6 "isofit" operation ----
       if(current_operation == "isofit"){
         print("ISOFIT ATMOSPHERIC CORRECTION")
@@ -298,7 +288,8 @@ PRISTAR_processing <- function(root_folder){
         
       }
       
-      if(index_of_chained_operations == 1 | current_operation == "smooth"){
+      # if(index_of_chained_operations == 1 | current_operation == "smooth"){
+      if(current_operation != "isofit"){
         print("ADD PRISMA METADATA")
         add_PRISMA_metadata(output_file_path = output_file_path,
                             PRISMA_wvl_info = PRISMA_wvl_info ,
