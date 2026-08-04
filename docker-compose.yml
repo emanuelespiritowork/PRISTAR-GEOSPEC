@@ -7,6 +7,7 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          memory-swappiness: 0
     environment:
       DISABLE_AUTH: true
       ROOT: true
@@ -23,6 +24,7 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          memory-swappiness: 0
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -35,6 +37,7 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          memory-swappiness: 0
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder 
