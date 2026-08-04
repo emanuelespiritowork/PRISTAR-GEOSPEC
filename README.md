@@ -14,28 +14,34 @@ PRISMA (PRecursore IperSpettrale della Missione Applicativa) is a pilot hyperspe
 
 
 PRISTAR-GEOSPEC tool can help you in:
-- importing L0, L1, L2 PRISMA products;
+- importing L0, L1, L2 PRISMA products downloaded from ASI portal;
 - extracting and cleaning cloud mask for PRISMA;
 - creating unique hyperspectral datacube VNIR+SWIR;
 - extracting raster of angles;
 - extracting central wavelengths and FWHMs;
-- extracting and computing sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure); 
+- extracting and computing sun and sensor angles of PRISMA image (e.g. for your own atmospheric correction procedure);
+- using a built-in atmospheric corrector (JPL-NASA ISOFIT) to process your PRISMA L1 products;
 - DEM-guided orthoprojection of PRISMA with DEM and Sentinel-2 image using AROSICS and Rational Polynomial Function (RPF);
-- coregistration of PRISMA to Sentinel-2 image using AROSICS and gdalwarp;
+- coregistration of PRISMA to Sentinel-2 image using AROSICS and gdalwarp. For images where GNSS has gone wrong, this procedure is helped with a rigid shift that you can do with a built-in tool;
 - spectral smoothing and bad-bands removal;
-- regriding and cropping the PRISMA image to a master PRISMA image.
+- regriding and cropping the PRISMA image to a master PRISMA image;
+- keeping all the useful metadata (central wavelengths, FWHMs, band names, cloud mask) of the image;
+- having each intermediate step of all the processing done over the original ASI PRISMA "standard" image in a standardized folder structure and with a coherent naming convention;
+- apply all this workflow to an entire archive of time series of PRISMA images over the same area without much effort in organising the data thanks to the already-prepared folder structure.
 
 # Credits
 
-#Emanuele Spirito @ CNR-IREA (author)
+#Emanuele Spirito @ CNR-IREA (first author)
 
-#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintanance of the Docker Container and any hardware-related solution
+#Lorenzo Parigi @ CNR-IREA (second author) for writing the smoothing procedure, helping with three dockers composition, maintenance and docker networks, finding the ISOFIT integration best practice
+
+#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintenance of the first version of the Docker Container and any hardware-related solution
 
 #Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for injection of L0 products
 
-#Lorenzo Parigi @ CNR-IREA for writing the smoothing procedure
-
 #Riccardo Canazza @ CNR-IREA for advice in regrid procedure
+
+#Gabriele Candiani @ CNR-IREA for advisory in naming convention, metadata quality and visual check of results
 
 #Rodolfo Ceriani @ UNIMI-DISAA for user-advisory
 
@@ -49,6 +55,8 @@ PRISTAR-GEOSPEC tool can help you in:
 
 #GDAL: https://gdal.org/en/stable distributed under MIT license
 
+#ISOFIT: https://isofit.github.io/isofit/4.1.0/ distributed under Apache-2.0 license
+
 #Lorenzo Busetto @ CNR-IREA for prismaread package https://github.com/IREA-CNR-MI/prismaread distributed under GPL-3.0 license
 
 #Giandomenico De Luca @ CNR-IBE https://doi.org/10.1016/j.isprsjprs.2024.07.003
@@ -56,28 +64,55 @@ https://doi.org/10.5281/zenodo.11547257
 
 #Yulun Wu @ Ottawa University https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py distributed under GPL-3.0 license
 
+#Spirito et al., 2026, Trends in Earth Observation, Volume IV, https://aitonline.org/wp-content/uploads/2026/07/Smart-Earth-Observation-for-a-Sustainable-Future.pdf
+
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.3.0-alpha into a folder that will be the _PRISTAR-GEOSPEC folder_. Download the docker image from dockerhub https://hub.docker.com/r/emanuelespiritowork/pristar-geospec/tags. Use the following command in the Windows terminal:
+Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.9.0-beta and after unzipping this will be your `config_folder`. The maximum RAM used should be increased in the Docker configuration file. Create a file in `C:\Users\<your_users>\.wslconfig` and write inside:
+```txt
+[wsl2]
+memory=24GB
+```
+or any amount of memory you should maximally give to any Docker. Then in the terminal restart the wsl:
 ```cmd
-docker run --rm -ti -e DISABLE_AUTH=true -p 127.0.0.1:8787:8787 --memory="24576m" --memory-swap="24576m" -v C:/your/path/to/PRISTAR-GEOSPEC/folder:/space:rw emanuelespiritowork/pristar-geospec:#.#
-``` 
-where you insert version number where above is #.# and 24576 stands for the amount of RAM to be used (24GB in this case). Then a UNIX console will be opened and you can start your Docker writing:
+wsl --shutdown
+```
+The PRISTAR_GEOSPEC configuration file for the Docker is the `config_folder/.env` file. Set the amount of RAM you want to limit each docker. Then open the terminal inside that folder (open a terminal and use the `cd` command to put the directory of the `config_folder`) and run:
 ```cmd
-./init
+docker compose up -d
 ``` 
-Open a browser and enter the following URL:
+This will check your docker containers and if you are running it for the first time it will download all the dockers needed (namely AROSICS docker, ISOFIT docker and RStudio docker). Then open a browser (Chrome, Edge, Brave, Firefox, ...) and enter the following URL:
 ```cmd
 localhost:8787
 ```
-An Rstudio Server will be loaded. Go to the right panel and click over the setup:
+An Rstudio Server will be loaded. Go to the right panel and click over the setup as in the screenshot:
 
 ![image](https://github.com/user-attachments/assets/cce0db0c-e775-450c-8362-9c724885a2c1)
 
 then put inside the box:
 ```cmd
-/space/
+/config_folder/
 ```
+# WHERE TO PUT YOUR DATA
+- (optional) in the `config_folder/DEM` folder you should put the DTM, the aspect and the slope rasters if you want to use the `ortho` feature and the `isofit` atmospheric correction. Each of these files should contain in the name respectively `dtm`, `aspect`, `slope`;
+- (optional) in the `config_folder/master_image_for_regridding` folder you should put the master image if you want to use the `regrid` feature and the `crop` feature. The image should be in `.tif` format;
+- (mandatory) in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder you should put a folder for each image you want to process. Inside each of these folders there should be the PRISMA `.he5` file with the original name from ASI portal (starting with `PRS`). Then if you also want to use `coreg` or `ortho` feature then you also need to put here a Sentinel-2 single-band image with the band you want to use to do the coregistration (see `PRS_band_for_coreg` to match to the PRISMA image band used for coregistration). The S2 image should have in its name `S2` or `s2` and should be a `.tif` image. 
+
 # HOW TO USE IT
+You will see a list of files. Click on `main.R`. Here you will see the script configuration file where you can manage the processing of the images. Here is the list of the parameters with their explaination:
+
+- `regrid_option`: when using the `regrid` step this will be the regriding method, namely `N` for nearest neighbour, `C` for cubic-spline and `B` for bilinear. If you don't know the default `N` will be a conservative choice;
+- `full_230_bands`: when using the `smooth` step this will interpolate the bad bands (if `TRUE`) or will just remove the bad bands (if `FALSE`);
+- `PRS_band_for_coreg`: when using the `coreg` step this will be the band number to use for coregistration procedure;
+- `shift`: when using the `coreg` step this will enable the rigid shift of the image (if `TRUE`);
+- `shift_x`: when `shift` is `TRUE`, this will be the meters of the shift along x-axis in the UTM projection;
+- `shift_y`: when `shift` is `TRUE`, this will be the meters of the shift along y-axis in the UTM projection;
+- `n_threads`: the maximum number of cores to be used in the smoothing and in the ISOFIT procedures;
+- `aod_fixed`: when using the `isofit` step this will make you use the ISOFIT automatic estimation of Aerosol Optical Depth (AOD) or will try to fix the AOD in the atmospheric correction process to the best NASA Giovanni AOD value for each PRISMA image;
+- `procedure_order`: a vector containing the list of all the processing steps in the order you want them. There is already a suggestion for L0, L1 and L2 products, but you can use it as LEGO building blocks.
+
+After putting all these data inside then you can run everything clicking on `Source` in the upper right corner of the script.  
+
+# USE CASES
 Use case:
 1) you want read a L0 PRISMA image. Put _data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5_ and _data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5_ into _put_PRISMA_he5_and_S2_tif_here_ folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 products and put the .he5 file inside the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
 ```r
