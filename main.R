@@ -4,17 +4,23 @@
 
 #citations: 
 
-#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for reading L0 products #https://doi.org/10.1016/j.isprsjprs.2024.07.003, https://doi.org/10.5281/zenodo.11547257
+#Emanuele Spirito @ CNR-IREA (first author)
 
-#Lorenzo Busetto @ CNR-IREA for prismaread package #https://github.com/IREA-CNR-MI/prismaread #distributed under GPL-3.0 license
+#Lorenzo Parigi @ CNR-IREA (second author) for writing the smoothing procedure, helping with three dockers composition, maintenance and docker networks, finding the ISOFIT integration best practice
 
-#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintanance of the Docker Container and any hardware-related solution #https://github.com/GFZ/arosics #distributed under Apache-2.0 license #https://gdal.org/en/stable #distributed under MIT license
+#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintenance of the first version of the Docker Container and any hardware-related solution
 
-#Lorenzo Parigi @ CNR-IREA for smoothing procedure, new Docker structure, API and isofit incorporation 
+#Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for injection of L0 products
 
-#Riccardo Canazza for advice  in regrid procedure
+#Riccardo Canazza @ CNR-IREA for advice in regrid procedure
 
-#Yulun Wu @ University of Ottawa for PRISMA_angle.py code #https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py #distributed under GPL-3.0 license
+#Gabriele Candiani @ CNR-IREA for advisory in naming convention, metadata quality and visual check of results
+
+#Rodolfo Ceriani @ UNIMI-DISAA for user-advisory
+
+#Mirco Boschetti @ CNR-IREA for accelerating the path
+
+#Monica Pepe @ CNR-IREA for guiding the whole procedure, scientific knowledge and coordination
 
 #_____________________________________________________________________
 #User inputs ----
@@ -30,10 +36,8 @@ n_threads <- 10
 aod_fixed <- F
 dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 
-#for expert users:
-#procedure_order <- c("inject","read","cloud","coreg","atcor","regrid","crop","smooth")
-# procedure_order <- c("inject","read","coreg")
-
+#For L0
+# procedure_order <- c("inject","read","cloud","coreg","isofit","regrid","smooth","crop")
 #For L1
 procedure_order <- c("read","cloud","coreg","isofit","regrid","smooth","crop")
 #For L2
@@ -66,7 +70,7 @@ PRISTAR_processing <- function(root_folder,
   #1.1 identify file paths ----
   he5_path <- base::list.files(path = root_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
   s2_path <- base::list.files(path = root_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
-  dem_path <- base::list.files(path = "/config_folder/DEM", pattern = "dtm", full.names = T)
+  dem_path <- base::list.files(path = "/config_folder/DEM", pattern = "dtm", ignore.case = F, full.names = T)
   master_image_path <- base::list.files("/config_folder/master_image_for_regridding/", full.names = T, pattern = "\\.tif$")
   
   #1.2 identify product_type ----
