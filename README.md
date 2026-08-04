@@ -67,7 +67,16 @@ https://doi.org/10.5281/zenodo.11547257
 #Spirito et al., 2026, Trends in Earth Observation, Volume IV, https://aitonline.org/wp-content/uploads/2026/07/Smart-Earth-Observation-for-a-Sustainable-Future.pdf
 
 # HOW TO INSTALL IT
-Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.9.0-beta and after unzipping this will be your `config_folder`. The configuration file for the docker run is the `config_folder/.env` file. Set the amount of RAM you want to limit each docker. Then open the terminal inside that folder (open a terminal and use the `cd` command to put the directory of the `config_folder`) and run:
+Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.9.0-beta and after unzipping this will be your `config_folder`. The maximum RAM used should be increased in the Docker configuration file. Create a file in `C:\Users\<your_users>\.wslconfig` and write inside:
+```txt
+[wsl2]
+memory=24GB
+```
+or any amount of memory you should maximally give to any Docker. Then in the terminal restart the wsl:
+```cmd
+wsl --shutdown
+```
+The PRISTAR_GEOSPEC configuration file for the Docker is the `config_folder/.env` file. Set the amount of RAM you want to limit each docker. Then open the terminal inside that folder (open a terminal and use the `cd` command to put the directory of the `config_folder`) and run:
 ```cmd
 docker compose up -d
 ``` 
