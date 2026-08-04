@@ -178,8 +178,9 @@ isofit_atcor <- function(output_file_path,
                          input_file_path, 
                          PRISMA_wvl_info, 
                          root_folder,
-                         cloud_present_in_stack,
-                         PRISMA_angle_info){
+                         n_threads,
+                         PRISMA_angle_info,
+                         aod_fixed){
   #####################
   ####### Creation of RDN file
   #####################
@@ -391,13 +392,25 @@ isofit_atcor <- function(output_file_path,
   #####################
   ####### Running isofit
   #####################
-  isofit_command <- sprintf(
-    "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores 10 --presolve",
-    rdn_file_path, 
-    loc_file_path, 
-    obs_file_path, 
-    paste0(base::dirname(output_file_path),"/results"),
-    "/config_folder/surface_20240103_enmap_OG.json")
+  if(aod_fixed){
+    isofit_command <- sprintf(
+      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --presolve --aerosol_climatology_path /config_folder/isofit_aod_config.json ",
+      rdn_file_path, 
+      loc_file_path, 
+      obs_file_path, 
+      paste0(base::dirname(output_file_path),"/results"),
+      "/config_folder/surface_20240103_enmap_OG.json",
+      n_threads)
+  }else{
+    isofit_command <- sprintf(
+      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --presolve",
+      rdn_file_path, 
+      loc_file_path, 
+      obs_file_path, 
+      paste0(base::dirname(output_file_path),"/results"),
+      "/config_folder/surface_20240103_enmap_OG.json",
+      n_threads)
+  }
   
   res <- dockernet_call(dockername = "isofit",
                         command = isofit_command)
@@ -503,19 +516,10 @@ isofit_atcor <- function(output_file_path,
   envi_file_mask <- terra::mask(x = envi_file_read, 
                                 mask = raster_read)
   
-  if(cloud_present_in_stack){
-    cloud_mask <- terra::rast(input_file_path, lyrs = 231)
-    output_with_cloud_mask <- c(envi_file_mask,cloud_mask)
-    names(output_with_cloud_mask) <- c(names(envi_file_mask),"cloud_mask")
-    terra::writeRaster(x = output_with_cloud_mask,
+  
+  terra::writeRaster(x = envi_file_mask,
                        filename = output_file_path,
                        overwrite = T)
-    #PROBLEM: here there could be some problems with .hdr file because we have to add cloud mask inside band names and wavelengths
-  }else{
-    terra::writeRaster(x = envi_file_mask,
-                       filename = output_file_path,
-                       overwrite = T)
-  }
   
   file.remove(gsub("*.tif$","",output_file_path))
   # file.remove(gsub("*.tif$",".hdr",output_file_path))
@@ -553,11 +557,21 @@ cloud_mask <- function(cloud_path,
   
   terra::add(full) <- cloud_dil
   
-  terra::writeRaster(x = full, 
-                     filename = base::gsub("*.tif$","_CLD.tif",full_path),
+  # terra::writeRaster(x = full, 
+  #                    filename = base::gsub("*.tif$","_CLD.tif",full_path),
+  #                    # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
+  #                    overwrite = T
+  #                    )
+  
+  terra::writeRaster(x = cloud_dil, 
+                     filename = base::gsub("*FULL.tif$","cloudmask.tif",full_path),
                      # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                      overwrite = T
-                     )
+  )
+  
+  file.remove(list.files(path = dirname(full_path),
+                         pattern = "*.xml$",
+                         full.names = T))
 }
 
 #_____________________________________________________________________
@@ -622,7 +636,7 @@ coregistration_to_s2 <- function(s2_path,
   
   if(shift){
     print("shift for all bands")
-    shifted <- raster::shift(x = prisma_projected,
+    shifted <- terra::shift(x = prisma_projected,
                              dx = shift_x,
                              dy = shift_y)
     
@@ -635,7 +649,7 @@ coregistration_to_s2 <- function(s2_path,
     coreg_proj_path <- gsub("*.tif$","_traslated.tif",coreg_proj_path)
     
     print("shift for 52 band")
-    shifted <- raster::shift(x = prisma_projected_52,
+    shifted <- terra::shift(x = prisma_projected_52,
                              dx = shift_x,
                              dy = shift_y)
     
@@ -1024,7 +1038,6 @@ smooth_spectra <- function(input_file_path,
                            #PRISMA_bad_bands_table = bad_bands_vector,
                            PRISMA_wvl_info,
                            output_file_path,
-                           cloud_present_in_stack,
                            full_230_bands,
                            n_threads = 1
 ){
@@ -1064,13 +1077,6 @@ smooth_spectra <- function(input_file_path,
   
   terra_image <- terra::rast(input_file_path)
   
-  if(cloud_present_in_stack){
-    cloud <- terra::subset(terra_image,subset = 231, negate = F)
-    terra_image_sub <- terra::subset(terra_image,subset = 231,negate=T)
-  }else{
-    terra_image_sub <- terra_image
-  }
-  
   #print("Apply smoothing")
   
   #terra::terraOptions(memmin = 30, print=T, progress = 1, memfrac = 0.8, verbose = T)
@@ -1085,7 +1091,7 @@ smooth_spectra <- function(input_file_path,
   # }
   
   smoothed_file <- terra::app(
-    x = terra_image_sub,
+    x = terra_image,
     fun = spline_fun,
     band_center_input = input_wvl, 
     bad_bands_pos = input_bad_bands, 
@@ -1095,13 +1101,7 @@ smooth_spectra <- function(input_file_path,
     cores = n_threads
   )
   
-  if(cloud_present_in_stack){
-    out_file <- c(smoothed_file,cloud)
-  }else{
-    out_file <- smoothed_file
-  }
-  
-  terra::writeRaster(x = out_file,
+  terra::writeRaster(x = smoothed_file,
                      filename = output_file_path,
                      # wopt = base::list(gdal = c("COMPRESS=LZW", "TILED=YES")),
                      overwrite = T)
@@ -1130,7 +1130,6 @@ add_PRISMA_metadata <- function(output_file_path,
                                 PRISMA_config, #here I get the wavelength of the smoothed
                                 PRISMA_angle_info, #here I get the time
                                 PRISMA_wvl_info, #here I get the wavelength of the not smoothed
-                                cloud_present_in_stack,
                                 full_230_bands
                                 ){
   
@@ -1298,12 +1297,7 @@ naming_convention <- function(out_folder,
     date_string <- gsub("-","",date)
     datetime <- paste0(date_string,"t",time_string) 
     
-    if(grepl(pattern = "FULL_CLD.tif",x = input_file_path)){
-      #in case the unchained "cloud" has been performed add also "F", i.e. fixing cloud mask
-      new_basename <- paste(c("PRS",product_type,datetime,paste0("F",letter_to_add)), collapse = "_")
-    }else{
-      new_basename <- paste(c("PRS",product_type,datetime,letter_to_add), collapse = "_")
-    }
+    new_basename <- paste(c("PRS",product_type,datetime,letter_to_add), collapse = "_")
     output_file_path <- paste0(name_of_current_output_folder,"/",new_basename,".tif")
     
   }
@@ -1312,13 +1306,8 @@ naming_convention <- function(out_folder,
 }
 
 #get_starting_prisma_image ----
-get_starting_prisma_image <- function(unchained_out_folder,
-                                      cloud_present_in_stack){
-  if(cloud_present_in_stack){
-    input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO_FULL_CLD.tif$", full.names = T, recursive = F)
-  }else{
-    input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\HCO_FULL.tif$", full.names = T, recursive = F)
-  }
+get_starting_prisma_image <- function(unchained_out_folder){
+  input_file_path <- base::list.files(path = unchained_out_folder, pattern = "\\FULL.tif$", full.names = T, recursive = F)
   
   if(identical(input_file_path,character(0))){
     stop("No readable PRISMA image found at", unchained_out_folder)
@@ -1391,3 +1380,22 @@ read_ENVI_header <- function(header_path){
   return(all_header_parameters)
 }
 
+#get_input_cloud_path ----
+get_input_cloud_path <- function(cloud_present_in_stack,
+                                 input_file_path){
+  if(cloud_present_in_stack){
+    return(list.files(path = dirname(input_file_path), pattern = "cloudmask", full.names = T))
+  }else{
+    return(NULL)
+  }
+}
+
+#get_output_cloud_path ----
+get_output_cloud_path <- function(cloud_present_in_stack,
+                                  output_file_path){
+  if(cloud_present_in_stack){
+    return(gsub("*.tif$", "_cloudmask.tif", output_file_path))
+  }else{
+    return(NULL)
+  }
+}

@@ -27,6 +27,7 @@ shift <- F
 shift_x <- -8000
 shift_y <- 0
 n_threads <- 10
+aod_fixed <- F
 dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 
 #for expert users:
@@ -34,7 +35,7 @@ dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 # procedure_order <- c("inject","read","coreg")
 
 #For L1
-procedure_order <- c("read","coreg","isofit","regrid","smooth","crop")
+procedure_order <- c("read","cloud","coreg","isofit","regrid","smooth","crop")
 #For L2
 # procedure_order <- c("read","coreg","regrid","smooth","crop")
 
@@ -48,7 +49,15 @@ source("/config_folder/functions.R")
 root_folders <- list.dirs(path = "/space",
                           recursive = F)
 
-PRISTAR_processing <- function(root_folder){
+PRISTAR_processing <- function(root_folder,
+                               procedure_order,
+                               n_threads,
+                               shift_y,
+                               shift_x,
+                               shift,
+                               PRS_band_for_coreg,
+                               full_230_bands,
+                               regrid_option){
   out_folder <-  paste(root_folder, "PRISTAR_processing", sep = "/")
   dir.create(out_folder,
              recursive = F,
@@ -178,8 +187,8 @@ PRISTAR_processing <- function(root_folder){
                                                           out_folder = out_folder, 
                                                           current_operation = current_operation)
       if(index_of_chained_operations == 1){
-        input_file_path <- get_starting_prisma_image(unchained_out_folder = unchained_out_folder,
-                                                     cloud_present_in_stack = cloud_present_in_stack)
+        input_file_path <- get_starting_prisma_image(unchained_out_folder = unchained_out_folder)
+        
         create_thumbnail(input_file_path = input_file_path,
                          out_folder = out_folder)
       }else{
@@ -194,6 +203,12 @@ PRISTAR_processing <- function(root_folder){
                                             PRISMA_angle_info = PRISMA_angle_info, 
                                             product_type = product_type)
       
+      input_cloud_path <- get_input_cloud_path(cloud_present_in_stack = cloud_present_in_stack,
+                                               input_file_path = input_file_path)
+      
+      output_cloud_path <- get_output_cloud_path(cloud_present_in_stack = cloud_present_in_stack,
+                                                 output_file_path = output_file_path)
+      
       ##1.3.2.1 "coreg" or "ortho" operation ----
       if(current_operation == "coreg" | current_operation == "ortho"){
         if(current_operation == "coreg"){
@@ -204,16 +219,50 @@ PRISTAR_processing <- function(root_folder){
           print("ORTHO")
         }
         
-        coregistration_to_s2(s2_path = s2_path,
-                             input_file_path = input_file_path,
-                             output_file_path = output_file_path,
-                             dem = dem,
-                             dem_path = dem_path,
-                             product_type = product_type,
-                             PRS_band_for_coreg = PRS_band_for_coreg,
-                             shift = shift,
-                             shift_x = shift_x,
-                             shift_y = shift_y)
+        if(!is.null(input_cloud_path) & !is.null(output_cloud_path)){
+          cloud_layer <- terra::rast(input_cloud_path)
+          full_layer <- terra::rast(input_file_path)
+          terra::writeRaster(x = c(full_layer,cloud_layer),
+                             filename = gsub("*.tif$","_stack.tif",input_file_path),
+                             overwrite = T)
+          
+          coregistration_to_s2(s2_path = s2_path,
+                               input_file_path = gsub("*.tif$","_stack.tif",input_file_path),
+                               output_file_path = gsub("*.tif$","_stack.tif",output_file_path),
+                               dem = dem,
+                               dem_path = dem_path,
+                               product_type = product_type,
+                               PRS_band_for_coreg = PRS_band_for_coreg,
+                               shift = shift,
+                               shift_x = shift_x,
+                               shift_y = shift_y)
+          
+          read_full_plus_cloud <- terra::rast(gsub("*.tif$","_stack.tif",output_file_path))
+          cloud_layer <- terra::subset(x = read_full_plus_cloud, subset = c(terra::nlyr(read_full_plus_cloud)))
+          full_layer <- terra::subset(x = read_full_plus_cloud, subset = c(1:(terra::nlyr(read_full_plus_cloud)-1)))
+          terra::writeRaster(x = full_layer,
+                             filename = output_file_path,
+                             overwrite = T)
+          terra::writeRaster(x = cloud_layer,
+                             filename = output_cloud_path,
+                             overwrite = T)
+          file.remove(gsub("*.tif$","_stack.tif",output_file_path))
+          file.remove(gsub("*.tif$","_stack.tif",input_file_path))
+          file.remove(list.files(path = dirname(output_file_path),
+                                 pattern = "*.xml$",
+                                 full.names = T))
+        }else{
+          coregistration_to_s2(s2_path = s2_path,
+                               input_file_path = input_file_path,
+                               output_file_path = output_file_path,
+                               dem = dem,
+                               dem_path = dem_path,
+                               product_type = product_type,
+                               PRS_band_for_coreg = PRS_band_for_coreg,
+                               shift = shift,
+                               shift_x = shift_x,
+                               shift_y = shift_y)
+        }
         
         # if(validation_for_coreg){
         #   base::dir.create(paste0(name_of_current_output_folder,"/validation"), recursive = T, showWarnings = F)
@@ -241,6 +290,13 @@ PRISTAR_processing <- function(root_folder){
           resample_type <- "near"
         }
         
+        if(!is.null(input_cloud_path) & !is.null(output_cloud_path)){
+          regrid_function(master_image_path = master_image_path,
+                          input_file_path = input_cloud_path, 
+                          output_file_path = output_cloud_path, 
+                          resample_type = resample_type)
+        }
+        
         regrid_function(master_image_path = master_image_path,
                         input_file_path = input_file_path, 
                         output_file_path = output_file_path, 
@@ -250,6 +306,13 @@ PRISTAR_processing <- function(root_folder){
       ##1.3.2.3 "crop" operation ----
       if(current_operation == "crop"){
         print("CROP")
+        
+        if(!is.null(input_cloud_path) & !is.null(output_cloud_path)){
+          crop_function(master_image_path = master_image_path,
+                        input_file_path = input_cloud_path, 
+                        output_file_path = output_cloud_path)
+        }
+        
         crop_function(master_image_path = master_image_path,
                       input_file_path = input_file_path, 
                       output_file_path = output_file_path)
@@ -258,10 +321,16 @@ PRISTAR_processing <- function(root_folder){
       ##1.3.2.4 "smooth" operation ----
       if(current_operation == "smooth"){
         print("SMOOTH")
+
+        if(!is.null(input_cloud_path) & !is.null(output_cloud_path)){
+          file.copy(from = input_cloud_path,
+                    to = output_cloud_path,
+                    copy.mode = F)
+        }
+        
         smooth_spectra(input_file_path = input_file_path,
                        PRISMA_config = PRISMA_config,
                        PRISMA_wvl_info = PRISMA_wvl_info,
-                       cloud_present_in_stack = cloud_present_in_stack,
                        full_230_bands = full_230_bands,
                        n_threads = n_threads,
                        output_file_path = output_file_path)
@@ -279,12 +348,19 @@ PRISTAR_processing <- function(root_folder){
           stop("The L2 product is already in reflectance, so do not need any atcor.")
         }
         
+        if(!is.null(input_cloud_path) & !is.null(output_cloud_path)){
+          file.copy(from = input_cloud_path,
+                    to = output_cloud_path,
+                    copy.mode = F)
+        }
+        
         isofit_atcor(output_file_path = output_file_path,
                input_file_path = input_file_path,
                PRISMA_wvl_info = PRISMA_wvl_info, 
                root_folder = root_folder,
                PRISMA_angle_info = PRISMA_angle_info,
-               cloud_present_in_stack = cloud_present_in_stack)
+               n_threads = n_threads,
+               aod_fixed = aod_fixed)
         
       }
       
@@ -292,10 +368,9 @@ PRISTAR_processing <- function(root_folder){
       if(current_operation != "isofit"){
         print("ADD PRISMA METADATA")
         add_PRISMA_metadata(output_file_path = output_file_path,
-                            PRISMA_wvl_info = PRISMA_wvl_info ,
+                            PRISMA_wvl_info = PRISMA_wvl_info,
                             PRISMA_angle_info = PRISMA_angle_info,
                             PRISMA_config = PRISMA_config,
-                            cloud_present_in_stack = cloud_present_in_stack,
                             full_230_bands = full_230_bands)
       }
       
@@ -312,5 +387,13 @@ PRISTAR_processing <- function(root_folder){
   
 }
 
-lapply(root_folders, PRISTAR_processing)
+lapply(root_folders, PRISTAR_processing,
+       procedure_order = procedure_order,
+       n_threads = n_threads,
+       shift_y = shift_y,
+       shift_x = shift_x,
+       shift = shift,
+       PRS_band_for_coreg = PRS_band_for_coreg,
+       full_230_bands = full_230_bands,
+       regrid_option = regrid_option)
 
