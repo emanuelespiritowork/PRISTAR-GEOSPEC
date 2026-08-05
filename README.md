@@ -93,9 +93,23 @@ then put inside the box:
 /config_folder/
 ```
 # WHERE TO PUT YOUR DATA
-- (optional) in the `config_folder/DEM` folder you should put the DTM, the aspect and the slope rasters if you want to use the `ortho` feature and the `isofit` atmospheric correction. Each of these files should contain in the name respectively `dtm`, `aspect`, `slope`;
-- (optional) in the `config_folder/master_image_for_regridding` folder you should put the master image if you want to use the `regrid` feature and the `crop` feature. The image should be in `.tif` format;
-- (mandatory) in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder you should put a folder for each image you want to process. Inside each of these folders there should be the PRISMA `.he5` file with the original name from ASI portal (starting with `PRS`). Then if you also want to use `coreg` or `ortho` feature then you also need to put here a Sentinel-2 single-band image with the band you want to use to do the coregistration (see `PRS_band_for_coreg` to match to the PRISMA image band used for coregistration). The S2 image should have in its name `S2` or `s2` and should be a `.tif` image. 
+- (optional) in the `config_folder/DEM` folder you should put the DTM, the aspect and the slope rasters if you want to use the `ortho` feature and the `isofit` atmospheric correction. Each of these files should contain in the name respectively `dtm`, `aspect`, `slope`. In the picture you see the expected `config_folder/DEM` folder content:
+
+<img width="628" height="119" alt="image" src="https://github.com/user-attachments/assets/887388db-3b7b-425a-a34a-62c264f429c6" />
+
+- (optional) in the `config_folder/master_image_for_regridding` folder you should put the master image if you want to use the `regrid` feature and the `crop` feature. The image should be in `.tif` format.  In the picture you see the expected `config_folder/master_image_for_regridding` folder content:
+
+<img width="787" height="75" alt="image" src="https://github.com/user-attachments/assets/d6207eba-d865-4ce6-b8ac-e759f4e1bf78" />
+
+- (mandatory) in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder you should put a folder for each image you want to process. Inside each of these folders there should be the PRISMA `.he5` file with the original name from ASI portal (starting with `PRS`). Then if you also want to use `coreg` or `ortho` feature then you also need to put here a Sentinel-2 single-band image with the band you want to use to do the coregistration (see `PRS_band_for_coreg` to match to the PRISMA image band used for coregistration). The S2 image should have in its name `S2` or `s2` and should be a `.tif` image. In the picture you see the expected `config_folder/put_PRISMA_he5_and_S2_tif_here` folder content:
+
+<img width="679" height="141" alt="image" src="https://github.com/user-attachments/assets/bc4736b6-c45d-46ae-ba9a-64fa2d575b22" />
+
+An example of content of the `config_folder/put_PRISMA_he5_and_S2_tif_here/PRS_L1_STD_OFFL_20240928` for PRISMA image reading and coregistration should be:
+
+<img width="867" height="55" alt="image" src="https://github.com/user-attachments/assets/ef8ebe49-c1b5-463c-a2c4-763d62213240" />
+
+
 
 # HOW TO USE IT
 You will see a list of files. Click on `main.R`. Here you will see the script configuration file where you can manage the processing of the images. Here is the list of the parameters with their explaination:
@@ -150,6 +164,29 @@ Use case:
    procedure_order <- c("read","cloud","coreg","isofit")
    PRS_band_for_coreg <- 52
 ```
+# READING RESULTS
+Inside the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder you should have the list of PRISMA images folders (e.g L1 products):
+
+<img width="680" height="141" alt="image" src="https://github.com/user-attachments/assets/f408c35f-edc4-4284-bec3-b26e0a878f71" />
+
+If you open one of them you should find:
+
+<img width="814" height="168" alt="image" src="https://github.com/user-attachments/assets/5ecf8b00-4a47-4752-b2d8-bbc12f8420a8" />
+
+and if you open PRISTAR-processing folder you should find for the default L1 workflow:
+
+<img width="497" height="167" alt="image" src="https://github.com/user-attachments/assets/93f3ae91-a749-44d5-bad1-caf40bba7f5c" />
+
+Each folder contains the product in its name with the following naming convention:
+- S: smoothing
+- C: coregistration
+- R: regridding
+- O: orthoprojection
+- T: trimming (cropping)
+- A: atmospheric correction
+- I: inject
+
+that will appear in the filename in the order they have been performed from left to right.
 
 # WHAT IF A PROBLEM
 Open an Issue over the GitHub page & write email to the authors.
