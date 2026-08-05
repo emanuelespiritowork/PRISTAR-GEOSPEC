@@ -24,7 +24,7 @@ PRISTAR-GEOSPEC tool can help you in:
 - DEM-guided orthoprojection of PRISMA with DEM and Sentinel-2 image using AROSICS and Rational Polynomial Function (RPF);
 - coregistration of PRISMA to Sentinel-2 image using AROSICS and gdalwarp. For images where GNSS has gone wrong, this procedure is helped with a rigid shift that you can do with a built-in tool;
 - spectral smoothing and bad-bands removal;
-- regriding and cropping the PRISMA image to a master PRISMA image;
+- regriding and cropping the PRISMA image to a master PRISMA image so as you can create time series stack of PRISMA images;
 - keeping all the useful metadata (central wavelengths, FWHMs, band names, cloud mask) of the image;
 - having each intermediate step of all the processing done over the original ASI PRISMA "standard" image in a standardized folder structure and with a coherent naming convention;
 - apply all this workflow to an entire archive of time series of PRISMA images over the same area without much effort in organising the data thanks to the already-prepared folder structure.
@@ -64,7 +64,7 @@ https://doi.org/10.5281/zenodo.11547257
 
 #Yulun Wu @ Ottawa University https://github.com/yulunwu8/tmart/blob/main/tmart/AEC/read_PRISMA_vaa.py distributed under GPL-3.0 license
 
-#Spirito et al., 2026, Trends in Earth Observation, Volume IV, https://aitonline.org/wp-content/uploads/2026/07/Smart-Earth-Observation-for-a-Sustainable-Future.pdf
+#Spirito et al., 2026, Trends in Earth Observation, Volume IV, https://aitonline.org/wp-content/uploads/2026/07/Smart-Earth-Observation-for-a-Sustainable-Future.pdf distributed under Creative Commons AttributionNo Derivatives 4.0 International License
 
 # HOW TO INSTALL IT
 Download docker from https://www.docker.com/products/docker-desktop/. Install it and install WSL using the Docker procedure. After the installation is finished, restart your PC and open Docker. Download PRISTAR-GEOSPEC Release v0.9.0-beta and after unzipping this will be your `config_folder`. The maximum RAM used should be increased in the Docker configuration file. Create a file in `C:\Users\<your_users>\.wslconfig` and write inside:
@@ -111,49 +111,45 @@ You will see a list of files. Click on `main.R`. Here you will see the script co
 - `procedure_order`: a vector containing the list of all the processing steps in the order you want them. There is already a suggestion for L0, L1 and L2 products, but you can use it as LEGO building blocks.
 
 After putting all these data inside then you can run everything clicking on `Source` in the upper right corner of the script.  
-
+# DEFAULT USE CASES
+Use cases for:
+1) L0 products:
+```r
+   procedure_order <- c("inject","read","cloud","coreg","isofit","regrid","smooth","crop")
+```
+2) L1 products:
+```r
+   procedure_order <- c("read","cloud","coreg","isofit","regrid","smooth","crop")
+```
+3) L2 products:
+```r
+   procedure_order <- c("read","coreg","regrid","smooth","crop")
+```
+Just a note: PRISTAR-GEOSPEC will save each intermediate step, so don't worry if you want to stop before smoothing or cropping. 
 # USE CASES
 Use case:
-1) you want read a L0 PRISMA image. Put _data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5_ and _data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5_ into _put_PRISMA_he5_and_S2_tif_here_ folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 products and put the .he5 file inside the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+1) you want read a L0 PRISMA image. Put `data_SubAcq3_C_SWIR_SURFACE-OBS_Part0_S11.h5` and `data_SubAcq3_C_VNIR_SURFACE-OBS_Part0_S11.he5` into `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. Then choose a L1 PRISMA image with same or similar view angle to the L0 product and put its `.he5` file inside the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. Then use PRISTAR-GEOSPEC with:
 ```r
    procedure_order <- c("inject","read")
 ```
-2) you want to read a L1 or L2 PRISMA image in .he5 format. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+2) you want to read a L1 or L2 PRISMA image in `.he5` format. Put your PRISMA file in `.he5` format in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. Then use PRISTAR-GEOSPEC with:
 ```r
    procedure_order <- c("read")
 ```
-3) you want to read, generate cloud mask and angle file. Put your PRISMA file in .he5 format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+3) you want to read, generate cloud mask and atmospherically correct an L1 PRISMA image. Put your PRISMA file in `.he5` format in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. Put the dtm, the aspect and the slope rasters in the `config_folder/DEM` folder as separate files respectively with `dtm`, `aspect` and `slope` in their names. Then use PRISTAR-GEOSPEC with:
 ```r
-   procedure_order <- c("read","cloud","atcor")
+   procedure_order <- c("read","cloud","isofit")
 ```
-4) you want to read and coregister your PRISMA image to a one-band Sentinel-2 image using gdalwarp. Put your PRISMA file in .he5 format and S2 one-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Choose the PRISMA band for coregistration and if you want a validation for coregistration. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+4) you want to read and coregister your L2 PRISMA image to a one-band Sentinel-2 image using gdalwarp. Put your PRISMA file in `.he5` format and Sentinel-2 one-band image in `.tif` format in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. To optimize coregistration, choose the PRISMA band most suitable for the one-band you chose for the Sentinel-2 image (e.g. 52nd PRISMA image band if I chose the B8 Sentinel-2 band). Then use PRISTAR-GEOSPEC with:
 ```r
    procedure_order <- c("read","coreg")
-   validation_for_coreg <- F
    PRS_band_for_coreg <- 52
 ```
-5) you want to read and orthoproject your PRISMA image. Put your PRISMA file in .he5 format and S2 one-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your DEM image into .tif format into _DEM_ folder. Choose the PRISMA band for coregistration and if you want a validation for coregistration. Then open _main.R_ file in Rstudio server and in the procedure_order variable put
+5) you want to read, generate cloud mask, coregister and atmospherically correct an L1 PRISMA image. Put your PRISMA file in `.he5` format and Sentinel-2 one-band image in `.tif` format in the `config_folder/put_PRISMA_he5_and_S2_tif_here` folder. Put the dtm, the aspect and the slope rasters in the `config_folder/DEM` folder as separate files respectively with `dtm`, `aspect` and `slope` in their names. Choose the PRISMA band for coregistration and if you want a validation for coregistration. Then use PRISTAR-GEOSPEC with:
 ```r
-   procedure_order <- c("read","ortho")
-   validation_for_coreg <- F
+   procedure_order <- c("read","cloud","coreg","isofit")
    PRS_band_for_coreg <- 52
 ```
-6) you want to read, coregister your PRISMA image and spectral smooth with bad bands removal. Put your PRISMA file in .he5 format and S2 one-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Choose the PRISMA band for coregistration and if you want a validation for coregistration. Then open _main.R_ file in Rstudio server and put
-```r
-full_230_bands <- F
-procedure_order <- c("read","coreg","smooth")
-validation_for_coreg <- F
-PRS_band_for_coreg <- 52
-```
-7) you want to read, coregister your PRISMA image and regrid the PRISMA image to a master image. Put your PRISMA file in .he5 format and S2 one-band image in .tif format in the _put_PRISMA_he5_and_S2_tif_here_ folder. Then put your master PRISMA image in .tif format into _master_image_for_regridding_ folder. Choose the PRISMA band for coregistration and if you want a validation for coregistration. Choose type of resampling ("N" for nearest neighbor, "B" for bilinear, "C" for cubic). Then open _main.R_ file in Rstudio server and put
-```r
-regrid_option <- "N" #that can be either "B" or "C" 
-procedure_order <- c("read","coreg","regrid")
-validation_for_coreg <- F
-PRS_band_for_coreg <- 52
-```
 
-
-Click on _source_ and the code will start. 
 # WHAT IF A PROBLEM
-Ask
+Open an Issue over the GitHub page & write email to the authors.
