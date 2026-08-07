@@ -1147,30 +1147,23 @@ add_PRISMA_metadata <- function(output_file_path,
       tidytable::filter(BND_SEL %in% selection_vector) 
     
       band_wavelengths <- smoothed_config$center
+      # band_names <- paste0("B",sprintf("%03d",as.integer(gsub("B","",smoothed_config$Name))))
       band_names <- smoothed_config$Name
       band_fwhms <- smoothed_config$fwhm
   }else{
+    # band_names <- paste0("B",sprintf("%03d",PRISMA_wvl_info$band))
     band_names <- paste0("B",PRISMA_wvl_info$band)
     band_wavelengths <- PRISMA_wvl_info$wl
     band_fwhms <- PRISMA_wvl_info$fwhm
   }
   
-  if(grepl(pattern = "F", x = processing)){
-    layer_names <- c(band_names, "cloud_mask")
-    layer_wavelengths <- c(band_wavelengths, "cloud_mask")
-    layer_fwhms <- c(band_fwhms, "cloud_mask")
-  }else{
-    layer_names <- band_names
-    layer_wavelengths <- band_wavelengths
-    layer_fwhms <- band_fwhms
-  }
-  
   #read raster
   input_file <- terra::rast(output_file_path)
   
-  #write time
+  #write time and bands
   datetime <- as.POSIXlt(PRISMA_angle_info$date)
   terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
+  names(input_file) <- band_names
   
   #print raster
   output_file_path_envi <- gsub("\\.tif$",".envi",output_file_path)
@@ -1201,11 +1194,11 @@ add_PRISMA_metadata <- function(output_file_path,
   writeLines(text = old_header,
              con = hdr_file_path)
   
-  cat(paste0("band names = {",paste0(layer_names, collapse = ", "), "}"),
+  cat(paste0("band names = {",paste0(band_names, collapse = ", "), "}"),
       file = hdr_file_path,
       append = T)
   
-  cat("\n", paste0("wavelength = {",paste0(layer_wavelengths, collapse = ", "), "}"),
+  cat("\n", paste0("wavelength = {",paste0(band_wavelengths, collapse = ", "), "}"),
       file = hdr_file_path,
       append = T)
   
@@ -1213,7 +1206,7 @@ add_PRISMA_metadata <- function(output_file_path,
       file = hdr_file_path,
       append = T)
   
-  cat("\n", paste0("fwhm = {",paste0(layer_fwhms, collapse = ", "), "}"),
+  cat("\n", paste0("fwhm = {",paste0(band_fwhms, collapse = ", "), "}"),
       file = hdr_file_path,
       append = T)
   
@@ -1222,9 +1215,15 @@ add_PRISMA_metadata <- function(output_file_path,
                          pattern = "*.xml$",
                          full.names = T))
   
-  aaa = terra::rast(output_file_path_envi)
+  #reprint the .tif file
+  #write time and bands
+  input_file <- terra::rast(output_file_path_envi)
   
-  terra::writeRaster(aaa,
+  datetime <- as.POSIXlt(PRISMA_angle_info$date)
+  terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
+  names(input_file) <- band_names
+  
+  terra::writeRaster(input_file,
                      output_file_path,
                      overwrite =T)
   
