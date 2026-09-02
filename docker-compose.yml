@@ -7,10 +7,12 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          cpus: ${CPUS}
     mem_swappiness: 0
     environment:
       DISABLE_AUTH: true
       ROOT: true
+      N_CPUS: ${CPUS}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -24,7 +26,10 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          cpus: ${CPUS}
     mem_swappiness: 0
+    environment:
+      N_CPUS: ${CPUS}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -37,7 +42,10 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT}
+          cpus: ${CPUS}
     mem_swappiness: 0
+    environment:
+      N_CPUS: ${CPUS}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder 

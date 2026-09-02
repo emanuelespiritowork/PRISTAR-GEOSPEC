@@ -32,7 +32,7 @@ PRS_band_for_coreg <- 52
 shift <- F
 shift_x <- -8000
 shift_y <- 0
-n_threads <- 10
+n_threads <- as.integer(Sys.getenv("N_CPUS"))
 aod_fixed <- F
 dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
 
