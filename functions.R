@@ -1160,10 +1160,9 @@ add_PRISMA_metadata <- function(output_file_path,
   #read raster
   input_file <- terra::rast(output_file_path)
   
-  #write time and bands
+  #write time
   datetime <- as.POSIXlt(PRISMA_angle_info$date)
   terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
-  names(input_file) <- band_names
   
   #print raster
   output_file_path_envi <- gsub("\\.tif$",".envi",output_file_path)
@@ -1215,15 +1214,9 @@ add_PRISMA_metadata <- function(output_file_path,
                          pattern = "*.xml$",
                          full.names = T))
   
-  #reprint the .tif file
-  #write time and bands
-  input_file <- terra::rast(output_file_path_envi)
+  aaa = terra::rast(output_file_path_envi)
   
-  datetime <- as.POSIXlt(PRISMA_angle_info$date)
-  terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
-  names(input_file) <- band_names
-  
-  terra::writeRaster(input_file,
+  terra::writeRaster(aaa,
                      output_file_path,
                      overwrite =T)
   
