@@ -13,6 +13,8 @@ services:
       DISABLE_AUTH: true
       ROOT: true
       N_CPUS: ${CPUS}
+      USERID: ${PGID}
+      GROUPID: 1002
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder
@@ -22,6 +24,8 @@ services:
   isofit:
     image: lorenzopari/isofit-api:4.0.0
     container_name: PRISTAR_isofit
+    user: "0:${PGID}"
+    command: ["bash", "-c", "umask 002 && exec uvicorn api:app --host 0.0.0.0 --port 8000 --app-dir /root"]
     deploy:
       resources:
         limits:
@@ -38,6 +42,7 @@ services:
   arosics:
     image: lorenzopari/arosics:1.13.2
     container_name: PRISTAR_arosics
+    user: "1002:${PGID}"
     deploy:
       resources:
         limits:
