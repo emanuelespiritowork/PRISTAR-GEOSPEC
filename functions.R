@@ -394,7 +394,7 @@ isofit_atcor <- function(output_file_path,
   #####################
   if(aod_fixed){
     isofit_command <- sprintf(
-      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --presolve --aerosol_climatology_path /config_folder/isofit_aod_config.json ",
+      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --analytical_line --segmentation_size 40 --aerosol_climatology_path /config_folder/isofit_aod_config.json ",
       rdn_file_path, 
       loc_file_path, 
       obs_file_path, 
@@ -403,7 +403,7 @@ isofit_atcor <- function(output_file_path,
       n_threads)
   }else{
     isofit_command <- sprintf(
-      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --presolve",
+      "isofit apply_oe %s %s %s %s ang --surface_path %s --emulator_base $(isofit path srtmnet --key file) --n_cores %d --analytical_line --segmentation_size 40",
       rdn_file_path, 
       loc_file_path, 
       obs_file_path, 
