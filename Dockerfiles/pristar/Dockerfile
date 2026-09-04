@@ -60,7 +60,9 @@ RUN R --vanilla -e 'install.packages(c("pak"), repos = "https://cloud.r-project.
 #Main packages and Github packages
 RUN R --vanilla -e 'pak::pkg_install(c("here", "remotes", "httr2", "optparse", "tidytable", "data.table", "lubridate", "hms", \
                                        "sf", "terra", "exactextractr", "mmand", "tidyterra", "satellite", \
-                                       "emanuelespiritowork/prismaread", "kamapu/spatialist")); pak::pak_cleanup(force = TRUE)'
+                                       "kamapu/spatialist")); pak::pak_cleanup(force = TRUE)'
+
+RUN R --vanilla -e 'remotes::install_github("emanuelespiritowork/prismaread")'
 
 # Disable automatic Ubuntu updates
 RUN echo 'APT::Periodic::Update-Package-Lists "0";' > /etc/apt/apt.conf.d/20auto-upgrades && echo 'APT::Periodic::Download-Upgradeable-Packages "0";' >> /etc/apt/apt.conf.d/20auto-upgrades && echo 'APT::Periodic::AutocleanInterval "0";' >> /etc/apt/apt.conf.d/20auto-upgrades && echo 'APT::Periodic::Unattended-Upgrade "0";' >> /etc/apt/apt.conf.d/20auto-upgrades
