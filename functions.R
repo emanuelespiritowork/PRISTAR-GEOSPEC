@@ -1391,3 +1391,22 @@ get_output_cloud_path <- function(cloud_present_in_stack,
     return(NULL)
   }
 }
+
+#check_folder_structure ----
+check_folder_structure <- function(path = "/space/"){
+  #check folder structure for coregistration
+  # path <- "//10.0.1.243/nr_data/3_rs_data/PRISMA/JDS/tutti_L2"
+  list_of_folders <- dir(path= path, full.names = T)
+  
+  list_of_he5 <- lapply(list_of_folders, function(x){list.files(path = x, full.names = T, pattern = "*.he5$")})
+  
+  list_of_s2 <- lapply(list_of_folders, function(x){list.files(path = x, full.names = T, pattern = glob2rx("S2*.tif$"), ignore.case = T)})
+  
+  if(sum(is.na(list_of_s2)) == 0 & sum(is.na(list_of_he5)) == 0){
+    return(TRUE)
+  }else{
+    return(FALSE)
+  }
+  
+}
+
