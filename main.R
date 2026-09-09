@@ -53,6 +53,14 @@ source("/config_folder/functions.R")
 root_folders <- list.dirs(path = "/space",
                           recursive = F)
 
+if(!check_folder_structure(path = "/space")){
+  print("Directory /config_folder/put_PRISMA_he5_and_S2_tif_here is not either clean or complete (for coregistration purpose). 
+  If you are aware of what you are doing, continue. Otherwise execute the command clean_folder_structure(path = '/space'), fill all the S2 needed files and
+        try again.")
+  # clean_folder_structure(path = "/space")
+}
+
+
 PRISTAR_processing <- function(root_folder,
                                procedure_order,
                                n_threads,
