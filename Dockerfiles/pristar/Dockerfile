@@ -10,8 +10,8 @@ LABEL project="PRISTAR" \
       author="Emanuele Spirito" \
       maintainer="emanuelespirito@cnr.it" \
       image_name="PRISTAR" \
-      version="0.4.0" \
-      released="2026-07-01" \
+      version="0.9.0" \
+      released="2026-09-14" \
       description="Rstudio"
 
 USER root
