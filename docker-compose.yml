@@ -1,7 +1,7 @@
 services:
-  rstudio:
+  pristar:
     image: lorenzopari/pristar:latest
-    container_name: pristar-geospec
+    container_name: PRISTAR_geospec
     ports: ["${PORT_rstudio}:8787"]
     deploy:
       resources:
