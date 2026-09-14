@@ -13,7 +13,7 @@ RUN apt-get update && \
 
 WORKDIR /root
 
-COPY . ISOFIT/
+COPY ISOFIT/ ISOFIT/
 RUN cd ISOFIT && \
     uv sync && \
     uv run isofit -b /root download all && \
