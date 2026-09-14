@@ -1,6 +1,6 @@
 services:
   rstudio:
-    image: lorenzopari/test_pristar:0.4
+    image: lorenzopari/pristar:latest
     container_name: pristar-geospec
     ports: ["${PORT_rstudio}:8787"]
     deploy:
@@ -22,7 +22,7 @@ services:
     networks: [PRISTAR_net]
 
   isofit:
-    image: lorenzopari/isofit-api:4.0.0
+    image: lorenzopari/isofit:latest
     container_name: PRISTAR_isofit
     user: "0:${PGID:-1000}"
     command: ["bash", "-c", "umask 002 && exec uvicorn api:app --host 0.0.0.0 --port 8000 --app-dir /root"]
@@ -40,7 +40,7 @@ services:
     networks: [PRISTAR_net]
       
   arosics:
-    image: lorenzopari/arosics:1.13.2
+    image: lorenzopari/arosics:latest
     container_name: PRISTAR_arosics
     user: "${PUID:-1000}:${PGID:-1000}"
     deploy:
