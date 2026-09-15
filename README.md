@@ -190,3 +190,6 @@ that will appear in the filename in the order they have been performed from left
 
 # WHAT IF A PROBLEM
 Open an Issue over the GitHub page & write email to the authors.
+
+# WORKFLOW
+<img width="497" height="167" alt="image" src="https://github.com/emanuelespiritowork/PRISTAR-GEOSPEC/blob/main/flowchart.drawio.svg" />
