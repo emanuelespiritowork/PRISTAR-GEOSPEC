@@ -16,6 +16,7 @@ PRISMA (PRecursore IperSpettrale della Missione Applicativa) is a pilot hyperspe
 PRISTAR-GEOSPEC tool can help you in:
 - importing L0, L1, L2 PRISMA products downloaded from ASI portal;
 - extracting and cleaning cloud mask for PRISMA;
+- creating quicklooks (true color RGB, false colour composite and SWIR composite);
 - creating unique hyperspectral datacube VNIR+SWIR;
 - extracting raster of angles;
 - extracting central wavelengths and FWHMs;
