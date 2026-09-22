@@ -1,0 +1,26 @@
+# Build PRISTAR
+docker build -t lorenzopari/pristar:0.9.0 .
+docker push lorenzopari/pristar:0.9.0
+
+# Creare un alias (tag aggiuntivo) della stessa immagine
+docker tag lorenzopari/pristar:0.9.0 lorenzopari/pristar:latest
+docker push lorenzopari/pristar:latest
+
+
+# build ISOFIT
+git clone --branch v4.1.4 https://github.com/isofit/isofit.git ISOFIT
+docker build -t lorenzopari/isofit:4.1.4 .
+docker push lorenzopari/isofit:4.1.4
+
+# Creare un alias (tag aggiuntivo) della stessa immagine
+docker tag lorenzopari/isofit:4.1.4 lorenzopari/isofit:latest
+docker push lorenzopari/isofit:latest
+
+
+# Build PRISTAR
+docker build -t lorenzopari/arosics:1.13.2 .
+docker push lorenzopari/arosics:1.13.2
+
+# Creare un alias (tag aggiuntivo) della stessa immagine
+docker tag lorenzopari/arosics:1.13.2 lorenzopari/arosics:latest
+docker push lorenzopari/arosics:latest
