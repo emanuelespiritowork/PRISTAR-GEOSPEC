@@ -36,7 +36,7 @@ PRISTAR-GEOSPEC tool can help you in:
 
 #Lorenzo Parigi @ CNR-IREA (second author) for writing the smoothing procedure, helping with three dockers composition, maintenance and docker networks, finding the ISOFIT integration best practice
 
-#Federico Filipponi @ CNR-IGAG for his coregistration procedure made with Arosics and GDAL, for the maintenance of the first version of the Docker Container and any hardware-related solution
+#Federico Filipponi @ CNR-GEO for his coregistration procedure made with Arosics and GDAL, for the maintenance of the first version of the Docker Container and any hardware-related solution
 
 #Giandomenico De Luca @ CNR-IBE for advice on versions of GDAL and Arosics and for injection of L0 products
 
