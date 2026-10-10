@@ -15,6 +15,7 @@ services:
       N_CPUS: ${CPUS}
       USERID: ${PUID:-1000}
       GROUPID: ${PGID:-1000}
+      PRISTAR_VERSION_NUMBER: ${PRISTAR_VERSION_NUMBER}
     volumes:
       - ${IMAGES_PATH}:/space
       - ${CONFIG_PATH}:/config_folder

@@ -25,41 +25,40 @@
 #_____________________________________________________________________
 #User inputs ----
 #_____________________________________________________________________
-#for normal users: modify only things in this section
-regrid_option <- "N" #can be N for near, B for bilinear, C for cubic
-full_230_bands <- T
-PRS_band_for_coreg <- 52
-shift <- F
-shift_x <- -8000
-shift_y <- 0
+pristar_config <- tidytable::fread("/config_folder/pristar_config.csv")
+regrid_option <- pristar_config$REGRID_ALGORITHM #can be N for near, B for bilinear, C for cubic
+full_230_bands <- pristar_config$INTERPOLATE_BAD_BANDS
+bands_for_coreg <- pristar_config$BAND_FOR_COREGISTRATION
+shift <- pristar_config$RIGID_SHIFT
+shift_x <- pristar_config$SHIFT_X
+shift_y <- pristar_config$SHIFT_Y
 n_threads <- as.integer(Sys.getenv("N_CPUS"))
-aod_fixed <- F
-dem_root_path <- "//10.0.1.243/nr_data/4_rs_product/DTM/Italia/Tinitaly/data"
+aod_fixed <- pristar_config$AOD_FIXED
+pristar_version <- as.numeric(Sys.getenv("PRISTAR_VERSION_NUMBER"))
+procedure_order <- strsplit(pristar_config$PROCESSING_LINE, split = ",")[[1]]
 
-#For L0
-# procedure_order <- c("inject","read","cloud","coreg","isofit","regrid","smooth","crop")
-#For L1
-procedure_order <- c("read","cloud","coreg","isofit","regrid","smooth","crop")
-#For L2
-# procedure_order <- c("read","coreg","regrid","smooth","crop")
-
-#elements: inject, read, cloud, coreg, regrid, crop, smooth, ortho, isofit
+INPUTFOLDER = "/space"
+OUTPUTFOLDER = "/config_folder/output"
+dir.create(OUTPUTFOLDER)
 
 #_____________________________________________________________________
 # Main -----
 #_____________________________________________________________________
 source("/config_folder/functions.R")
+#input files identification and output folder structure creation
+folder_structure_creation(INPUTFOLDER = INPUTFOLDER,
+                          OUTPUTFOLDER = OUTPUTFOLDER)
+
+#coregistration band identification
+coreg_band_db <- data.frame(user_band_name = c("N","R","G","B"),
+           s2_band = c("B08_10m","B04_10m","B03_10m","B02_10m"),
+           prs_band = c(52,31,20,10)) |>
+  tidytable::as_tidytable() |>
+  tidytable::filter(user_band_name == bands_for_coreg)
+
 #input folder identification
-root_folders <- list.dirs(path = "/space",
+root_folders <- list.dirs(path = OUTPUTFOLDER,
                           recursive = F)
-
-if(!check_folder_structure(path = "/space")){
-  print("Directory /config_folder/put_PRISMA_he5_and_S2_tif_here is not either clean or complete (for coregistration purpose). 
-  If you are aware of what you are doing, continue. Otherwise execute the command clean_folder_structure(path = '/space'), fill all the S2 needed files and
-        try again.")
-  # clean_folder_structure(path = "/space")
-}
-
 
 PRISTAR_processing <- function(root_folder,
                                procedure_order,
@@ -67,9 +66,11 @@ PRISTAR_processing <- function(root_folder,
                                shift_y,
                                shift_x,
                                shift,
-                               PRS_band_for_coreg,
+                               coreg_band_db,
                                full_230_bands,
-                               regrid_option){
+                               regrid_option,
+                               dem_path,
+                               vect_path){
   out_folder <-  paste(root_folder, "PRISTAR_processing", sep = "/")
   dir.create(out_folder,
              recursive = F,
@@ -77,9 +78,7 @@ PRISTAR_processing <- function(root_folder,
   
   #1.1 identify file paths ----
   he5_path <- base::list.files(path = root_folder, pattern = "^PRS.*\\.he5$", ignore.case = T, full.names = T)
-  s2_path <- base::list.files(path = root_folder, pattern = glob2rx("S2*.tif$"), ignore.case = T, full.names = T)
-  dem_path <- base::list.files(path = "/config_folder/DEM", pattern = "dtm", ignore.case = F, full.names = T)
-  master_image_path <- base::list.files("/config_folder/master_image_for_regridding/", full.names = T, pattern = "\\.tif$")
+  s2_path <- base::list.files(path = root_folder, pattern = paste0(coreg_band_db$s2_band,".jp2"), recursive = T, full.names = T)
   
   #1.2 identify product_type ----
   product_type <- identify_product_type(he5_path)
@@ -94,8 +93,8 @@ PRISTAR_processing <- function(root_folder,
   }
   
   ##1.3.1 execute unchained operations ----
-  select_unchained_operations <- procedure_order[procedure_order %in% c("read","cloud","atcor","inject")]
-  select_chained_operations <- procedure_order[!(procedure_order %in% c("read","cloud","atcor","inject"))]
+  select_unchained_operations <- procedure_order[procedure_order %in% c("read","cloud","atcor")]
+  select_chained_operations <- procedure_order[!(procedure_order %in% c("read","cloud","atcor"))]
   cloud_present_in_stack <- F
   
   number_of_unchained_operations <- length(select_unchained_operations)
@@ -105,34 +104,6 @@ PRISTAR_processing <- function(root_folder,
   }
   for(index_of_unchained_operations in 1:number_of_unchained_operations){
     current_operation <- select_unchained_operations[index_of_unchained_operations]
-    
-    ###1.3.1.1 "inject" operation ----
-    if(current_operation == "inject"){
-      print("INJECT")
-      if(identical(he5_path,character(0))){
-        stop(paste0("No he5 file found in ", root_folder))
-      }else{
-        
-        #copy previous he5 file
-        dir.create(paste0(out_folder,"/0_original_L1/"),recursive = F, showWarnings = F)
-        invisible(file.copy(from = he5_path,
-                            to = paste0(paste0(out_folder,"/0_original_L1/"),basename(he5_path))))
-        
-        injection_command <- base::paste0("python"," ","/space/Injection_L0_in_L1_cubes.py")
-        get_result <- base::system(injection_command, intern = TRUE)
-        exit_result <- get_result[length(get_result)]
-      }
-      
-      if(exit_result == "Correctly_finished"){
-        he5_file_injected <- gsub(".he5$","_injected.he5",he5_path)
-        file.rename(he5_path, he5_file_injected)
-        he5_path <- he5_file_injected
-        product_type <- "L0"
-      }else{
-        stop("Error during injection. See error of python console")
-      }
-      
-    }
     
     ##1.3.1.2 "read" operation ----
     if(current_operation == "read"){
@@ -244,7 +215,7 @@ PRISTAR_processing <- function(root_folder,
                                dem = dem,
                                dem_path = dem_path,
                                product_type = product_type,
-                               PRS_band_for_coreg = PRS_band_for_coreg,
+                               PRS_band_for_coreg = coreg_band_db$prs_band,
                                shift = shift,
                                shift_x = shift_x,
                                shift_y = shift_y)
@@ -270,7 +241,7 @@ PRISTAR_processing <- function(root_folder,
                                dem = dem,
                                dem_path = dem_path,
                                product_type = product_type,
-                               PRS_band_for_coreg = PRS_band_for_coreg,
+                               PRS_band_for_coreg = coreg_band_db$prs_band,
                                shift = shift,
                                shift_x = shift_x,
                                shift_y = shift_y)
@@ -405,7 +376,9 @@ lapply(root_folders, PRISTAR_processing,
        shift_y = shift_y,
        shift_x = shift_x,
        shift = shift,
-       PRS_band_for_coreg = PRS_band_for_coreg,
+       coreg_band_db = coreg_band_db,
        full_230_bands = full_230_bands,
-       regrid_option = regrid_option)
+       regrid_option = regrid_option,
+       dem_path = DTM,
+       vect_path = AOI)
 

@@ -1,3 +1,75 @@
+#input_output_folder_structure_creation ----
+get_prisma_date <- function(prisma_image_path){
+  date <- h5attributes(h5file(prisma_image_path))$Product_StartTime
+  return(data.frame(prisma_image_path = prisma_image_path, prs_date = as.Date(date)))
+}
+
+get_s2_date <- function(s2_image_path){
+  date <- substring(strsplit(basename(s2_image_path),"_")[[1]][[3]],"1","8")
+  return(data.frame(s2_image_path = s2_image_path, s2_date = as.Date(date,format= "%Y%m%d")))
+}
+
+get_closest_s2_date <- function(prisma_date,all_s2_dates){
+  
+  diff_date <- abs(as.Date(unlist(all_s2_dates))-prisma_date)
+  return(all_s2_dates[which(diff_date == min(diff_date))][[1]])
+}
+
+try_read_vector <- function(x){
+  return(tryCatch(sf::st_read(x), error = function(e){NULL}))
+}
+
+try_read_raster <- function(x){
+  return(tryCatch(terra::rast(x), error = function(e){NULL}))
+}
+
+folder_structure_creation <- function(INPUTFOLDER, OUTPUTFOLDER){
+  all_files <- list.files(path = INPUTFOLDER, full.names = T)
+  
+  prisma_images <- list.files(pattern = "^PRS.*\\.he5$", path = INPUTFOLDER,
+                              full.names = T)
+  
+  sentinel_images <- list.files(pattern = glob2rx("S2*.zip$"), path = INPUTFOLDER, ignore.case = T,
+                                full.names = T)
+  
+  not_images <- all_files[!all_files %in% c(prisma_images,sentinel_images)]
+  
+  AOI <- lapply(not_images,try_read_vector)
+  
+  AOI[sapply(AOI, is.null)] <- NULL
+  
+  DTM <- lapply(not_images,try_read_raster)
+  
+  DTM[sapply(DTM, is.null)] <- NULL
+  
+  if(length(AOI) != 1){
+    stop("Put only 1 vector file in the input folder")
+  }
+  
+  if(length(DTM) != 1){
+    stop("Put only 1 raster DTM file in the input folder (any raster in the input folder will be interpreted as DTM file")
+  }
+  
+  DTM <- DTM[[1]]
+  AOI <- AOI[[1]]
+  
+  
+  prisma_dates <- lapply(prisma_images,get_prisma_date) |> tidytable::bind_rows()
+  sentinel_dates <- lapply(sentinel_images,get_s2_date) |> tidytable::bind_rows()
+  db_prs_s2 <- prisma_dates |>
+    tidytable::rowwise() |>
+    tidytable::mutate(s2_date = get_closest_s2_date(prisma_date = prs_date, all_s2_dates = sentinel_dates$s2_date)) |>
+    tidytable::ungroup() |>
+    tidytable::left_join(sentinel_dates) 
+  
+  for(i in 1:nrow(db_prs_s2)){
+    i_folder <- paste0(OUTPUTFOLDER,"/",db_prs_s2[i]$prs_date)
+    dir.create(i_folder)
+    file.copy(from = db_prs_s2[i]$prisma_image_path, to = paste0(i_folder,"/",basename(db_prs_s2[i]$prisma_image_path)))
+    unzip(db_prs_s2[i]$s2_image_path, exdir = paste0(i_folder,"/",tools::file_path_sans_ext(basename(db_prs_s2[i]$s2_image_path))))
+  }
+}
+
 #_____________________________________________________________________
 #check_consistency ----
 #_____________________________________________________________________
