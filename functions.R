@@ -1,6 +1,6 @@
 #input_output_folder_structure_creation ----
 get_prisma_date <- function(prisma_image_path){
-  date <- h5attributes(h5file(prisma_image_path))$Product_StartTime
+  date <- hdf5r::h5attributes(hdf5r::h5file(prisma_image_path))$Product_StartTime
   return(data.frame(prisma_image_path = prisma_image_path, prs_date = as.Date(date)))
 }
 
@@ -63,9 +63,9 @@ folder_structure_creation <- function(INPUTFOLDER, OUTPUTFOLDER){
     tidytable::left_join(sentinel_dates) 
   
   for(i in 1:nrow(db_prs_s2)){
-    i_folder <- paste0(OUTPUTFOLDER,"/",db_prs_s2[i]$prs_date)
+    i_folder <- paste0(OUTPUTFOLDER,"/",gsub("-","",db_prs_s2[i]$prs_date))
     dir.create(i_folder)
-    file.copy(from = db_prs_s2[i]$prisma_image_path, to = paste0(i_folder,"/",basename(db_prs_s2[i]$prisma_image_path)))
+    file.copy(from = db_prs_s2[i]$prisma_image_path, to = i_folder, copy.mode = F)
     unzip(db_prs_s2[i]$s2_image_path, exdir = paste0(i_folder,"/",tools::file_path_sans_ext(basename(db_prs_s2[i]$s2_image_path))))
   }
 }
@@ -221,6 +221,23 @@ atcor_parameters <- function(angle_file_path,
     prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
     prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
     prismaread_angle_file$slant_path <- as.numeric(slant_path)
+    
+    if(prismaread_angle_file$sensor_azimuth < 0){
+      prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
+    }
+    
+  }
+  
+  if(product_type == "L2"){
+    var <- tidytable::fread(list.files(dirname(angle_file_path), pattern = "*ANG.avgs$", full.names = T))
+    
+    sensor_zenith <- var$view_zenang
+    
+    #to be checked the relation to go from relative azimuth angle to sensor azimuth angle
+    sensor_azimuth <- var$relaz_ang - prismaread_angle_file$sunaz
+    
+    prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
+    prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
     
     if(prismaread_angle_file$sensor_azimuth < 0){
       prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
