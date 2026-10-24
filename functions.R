@@ -163,12 +163,6 @@ prismaread_function <- function(product_type,
     ANGLES <- T
     LATLON <- T
   }
-  if(product_type == "L0"){
-    CLOUD <- F
-    ATCOR <- F
-    ANGLES <- F
-    LATLON <- F
-  }
   
   prismaread::pr_convert(
     ANGLES = ANGLES,
@@ -199,16 +193,29 @@ atcor_parameters <- function(angle_file_path,
                              product_type
                              ){
   
-  prismaread_angle_file <- utils::read.table(angle_file_path, header =T)
+  # prismaread_angle_file <- utils::read.table(angle_file_path, header =T)
+  
+  cat(x = root_folder,
+      file = '/config_folder/angle_config.txt')
+  
+  #readLines('/config_folder/angle_config.txt')
+  # product_type_s = substring(basename(angle_file_path),5,7)
+  
+  # if(product_type == "L1"){
+  #   PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
+  # }else if(product_type == "L2" & product_type_s == "L2D"){
+  #   PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle_L2D.py")
+  # }else if(product_type == "L2" & product_type_s == "L2C"){
+  #   PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle_L2C.py")
+  # }else{
+  #   stop("No L1,L2C,L2D valid H5 file passed")
+  # }
   
   if(product_type == "L1"){
-    cat(x = root_folder,
-        file = '/config_folder/angle_config.txt')
-    
-    PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle.py")
+    PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle_L1.py")
     
     res <- dockernet_call(dockername = "arosics", 
-                   command = PRISMA_angle_command)
+                          command = PRISMA_angle_command)
     
     var <- res$stdout
     
@@ -216,33 +223,46 @@ atcor_parameters <- function(angle_file_path,
     
     sensor_azimuth <- gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[2]], "float64")[[1]][[2]]))
     
-    slant_path <- gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[3]], "float64")[[1]][[2]])))
+    slant_path <- gsub(" ","", gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[3]], "float64")[[1]][[2]]))))
     
-    prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
-    prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
-    prismaread_angle_file$slant_path <- as.numeric(slant_path)
+    sun_azimuth <- gsub(" ", "", gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[4]], "float64")[[1]][[2]]))))
     
-    if(prismaread_angle_file$sensor_azimuth < 0){
-      prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
-    }
+    sun_zenith <- gsub(" ","",gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[5]], "float64")[[1]][[2]]))))
     
+    date <- gsub("b'","",gsub(" ","",gsub("\n","",gsub("\\)","",gsub("\\(","",strsplit(x = strsplit(var,",")[[1]][[6]], "float64")[[1]][[2]])))))
   }
   
   if(product_type == "L2"){
-    var <- tidytable::fread(list.files(dirname(angle_file_path), pattern = "*ANG.avgs$", full.names = T))
+    PRISMA_angle_command <- base::paste0("python"," ","/config_folder/PRISMA_angle_L2.py")
     
-    sensor_zenith <- var$view_zenang
+    res <- dockernet_call(dockername = "arosics", 
+                          command = PRISMA_angle_command)
     
-    #to be checked the relation to go from relative azimuth angle to sensor azimuth angle
-    sensor_azimuth <- var$relaz_ang - prismaread_angle_file$sunaz
+    var <- res$stdout
     
-    prismaread_angle_file$sensor_zenith <- as.numeric(sensor_zenith)
-    prismaread_angle_file$sensor_azimuth <- as.numeric(sensor_azimuth)
+    sun_azimuth <- strsplit(x = var, split = "\n")[[1]][[2]]
     
-    if(prismaread_angle_file$sensor_azimuth < 0){
-      prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
-    }
+    sun_zenith <- strsplit(x = var, split = "\n")[[1]][[4]]
     
+    sensor_azimuth <- strsplit(x = var, split = "\n")[[1]][[6]]
+    
+    sensor_zenith <- strsplit(x = var, split = "\n")[[1]][[8]]
+    
+    slant_path = NA
+    
+    date <- gsub("b'","",strsplit(x = var, split = "\n")[[1]][[10]])
+  }
+  
+  prismaread_angle_file <- data.table::data.table(sensor_azimuth = as.numeric(sensor_azimuth),
+                                                  sensor_zenith = as.numeric(sensor_zenith),
+                                                  sun_azimuth = as.numeric(sun_azimuth), 
+                                                  sun_zenith = as.numeric(sun_zenith), 
+                                                  slant_path = as.numeric(slant_path),
+                                                  date = as.character(date)) |>
+    tidytable::as_tidytable()
+  
+  if(prismaread_angle_file$sensor_azimuth < 0){
+    prismaread_angle_file$sensor_azimuth <- 360 + prismaread_angle_file$sensor_azimuth
   }
   
   suppressWarnings(dir.create(paste0(base::dirname(angle_file_path),"/ATCOR/")))
@@ -374,7 +394,7 @@ isofit_atcor <- function(output_file_path,
   slant_path_mask <- terra::mask(slant_path_crop, raster_read[[1]])
   
   sunzen <- terra::rast(raster_read[[1]], 
-                              vals = PRISMA_angle_info$sunzen,
+                              vals = PRISMA_angle_info$sun_zenith,
                               names = "sunzen")
   
   sunzen_resample <- terra::resample(sunzen, raster_read)
@@ -382,7 +402,7 @@ isofit_atcor <- function(output_file_path,
   sunzen_mask <- terra::mask(sunzen_crop, raster_read[[1]])
   
   sunaz <- terra::rast(raster_read[[1]], 
-                       vals = PRISMA_angle_info$sunaz,
+                       vals = PRISMA_angle_info$sun_azimuth,
                        names = "sunaz")
   
   sunaz_resample <- terra::resample(sunaz, raster_read)
@@ -406,7 +426,7 @@ isofit_atcor <- function(output_file_path,
   senzen_mask <- terra::mask(senzen_crop, raster_read[[1]])
   
   utc <- terra::rast(raster_read[[1]], 
-                        vals = lubridate::hour(PRISMA_angle_info$date) + 1/60 * lubridate::minute(PRISMA_angle_info$date) + 1/3600 *  lubridate::second(PRISMA_angle_info$date),
+                        vals = lubridate::hour(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date))) + 1/60 * lubridate::minute(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date))) + 1/3600 *  lubridate::second(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date))),
                         names = "utc")
   
   utc_resample <- terra::resample(utc, raster_read)
@@ -440,7 +460,7 @@ isofit_atcor <- function(output_file_path,
   names(cos_local_solar_ill_angle_mask) <- "cos(i)"
   
   #approximate based on ESA computation. To search the same method used by ASI to compute earth sun distance
-  earth_sun_distance <- satellite::calcEarthSunDist(date = PRISMA_angle_info$date, formula = "ESA")
+  earth_sun_distance <- satellite::calcEarthSunDist(date = as.Date(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date))), formula = "ESA")
   earth_sun_distance_raster <- terra::rast(raster_read[[1]],
                                            vals = earth_sun_distance,
                                            names = "earth_sun_distance")
@@ -1250,7 +1270,7 @@ add_PRISMA_metadata <- function(output_file_path,
   input_file <- terra::rast(output_file_path)
   
   #write time
-  datetime <- as.POSIXlt(PRISMA_angle_info$date)
+  datetime <- as.POSIXlt(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date)))
   terra::time(input_file) <- rep(x = datetime, times = terra::nlyr(input_file))
   
   #print raster
@@ -1372,8 +1392,8 @@ naming_convention <- function(out_folder,
     new_basename <- gsub("*.tif$", paste0(letter_to_add,".tif"),old_basename)
     output_file_path <- paste0(name_of_current_output_folder,"/",new_basename)
   }else{
-    date <- as.Date(PRISMA_angle_info$date)
-    time <- hms::as_hms(PRISMA_angle_info$date)
+    date <- as.Date(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date)))
+    time <- hms::as_hms(as.POSIXct(gsub("T", " ",PRISMA_angle_info$date)))
     time_string <- paste0(sprintf("%02d", as.POSIXlt(time)$hour),sprintf("%02d", as.POSIXlt(time)$min),sprintf("%02d", base::round(as.POSIXlt(time)$sec,0)))
     date_string <- gsub("-","",date)
     datetime <- paste0(date_string,"t",time_string) 
